@@ -1,5 +1,5 @@
 {
-  "name": "arabic-api",
+  "name": "ajar-api",
   "version": "1.0.0",
   "description": "",
   "main": "dist/index.js",
@@ -14,6 +14,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/compression": "0.0.36",
+    "compression": "^1.7.3",
     "cors": "^2.8.5",
     "express": "^4.16.4",
     "js-yaml": "^3.12.1",

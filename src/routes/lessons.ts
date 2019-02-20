@@ -11,7 +11,14 @@ function getChapters(req: Request, res: Response) {
 
 function getDocument(req: Request, res: Response) {
   const { publication, chapter } = req.params;
-  content.getDocument(publication, chapter).then((data: any) => res.json(data));
+  content.getDocument(publication, chapter).then(
+    (doc: any): void => {
+      if (!doc) {
+        return void res.sendStatus(404);
+      }
+      res.json(doc);
+    },
+  );
 }
 
 const router = express.Router();

@@ -97,7 +97,7 @@ async function loadParsedContent(filePath: string): Promise<IDoc> {
 
     case 'csv': {
       const { fields, data } = doc;
-      const lines = data.split('\n');
+      const lines = data.trim().split('\n');
       const lemmas: ILemma[] = lines.map(line => {
         const items = line.trim().split(';');
         const lemma: ILemma = {};
@@ -132,7 +132,7 @@ export function getChapters(publication: string) {
 export function getDocument(publication: string, chapter: string) {
   return dbGet('SELECT * FROM docs WHERE publication=? and chapter=?', [publication, chapter]).then(
     (doc: IDoc) => {
-      if (doc.format === 'csv') {
+      if (doc && doc.format === 'csv') {
         doc.data = JSON.parse(doc.data);
       }
       return doc;

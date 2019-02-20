@@ -1,7 +1,8 @@
-title: Woordenlijst les 6
+title: Tekst 3 - Voor de school - woorden
 sortOrder: 60
+language:
 format: csv
-fields: ['nl', 'ar', 'trans']
+fields: ['base', 'foreign', 'trans']
 data: |
   voor (vz. van plaats);أَهَامَ;ʾamāma
   onthouden, bewaren, uit het hoofd leren;حَفِظَ;ḥafiẓa
