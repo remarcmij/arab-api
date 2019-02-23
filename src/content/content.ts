@@ -20,7 +20,7 @@ export interface IDoc {
   title: string;
   description?: string;
   sortOrder: number;
-  format?: 'csv' | 'md';
+  kind?: 'csv' | 'md';
   fields?: string[];
   data?: string;
 }
@@ -32,14 +32,14 @@ const SQL_CREATE_TABLE = `
     title TEXT NOT NULL,
     description TEXT,
     sortOrder INTEGER,
-    format TEXT,
+    kind TEXT,
     data TEXT,
     PRIMARY KEY (publication, chapter)
   )`;
 
 const SQL_INSERT = `
   INSERT OR REPLACE INTO docs
-    (publication, chapter, title, description, sortOrder, format, data)
+    (publication, chapter, title, description, sortOrder, kind, data)
     VALUES (?,?,?,?,?,?,?)`;
 
 const readFile = util.promisify(fs.readFile);
@@ -50,7 +50,13 @@ const dbRun = util.promisify(db.run.bind(db));
 const dbGet = util.promisify(db.get.bind(db));
 const dbAll = util.promisify(db.all.bind(db));
 
-const convertor = new showdown.Converter();
+const convertor = new showdown.Converter({
+  emoji: true,
+  openLinksInNewWindow: true,
+  simplifiedAutoLink: true,
+  strikethrough: true,
+  tables: true,
+});
 
 const parseFilePath = (filePath: string) => filePath.match(/^.*\/(.+)\.(.+)\.(.+)$/);
 
@@ -74,15 +80,15 @@ async function loadDocument(filePath: string): Promise<IDoc> {
 }
 
 function insertDoc(doc: IDoc) {
-  const { title, sortOrder, format, description, publication, chapter, data } = doc;
-  return dbRun(SQL_INSERT, [publication, chapter, title, description, sortOrder, format, data]);
+  const { title, sortOrder, kind, description, publication, chapter, data } = doc;
+  return dbRun(SQL_INSERT, [publication, chapter, title, description, sortOrder, kind, data]);
 }
 
 async function loadParsedContent(filePath: string): Promise<IDoc> {
   const doc = await loadDocument(filePath);
 
-  if (doc.format && !doc.data) {
-    const dataFilePath = filePath.replace(/yml$/, doc.format);
+  if (doc.kind && !doc.data) {
+    const dataFilePath = filePath.replace(/yml$/, doc.kind);
     try {
       logger.debug(`loading ${dataFilePath}`);
       doc.data = await readFile(dataFilePath, 'utf8');
@@ -91,7 +97,7 @@ async function loadParsedContent(filePath: string): Promise<IDoc> {
     }
   }
 
-  switch (doc.format) {
+  switch (doc.kind) {
     case 'md':
       return { ...doc, data: convertor.makeHtml(doc.data) };
 
@@ -116,28 +122,30 @@ async function loadParsedContent(filePath: string): Promise<IDoc> {
 
 export function getIndex() {
   return dbAll(
-    `SELECT publication, chapter, title, description
+    `SELECT publication, chapter, title, description, 'meta' as kind
     FROM docs WHERE chapter="index" ORDER BY sortOrder`,
   );
 }
 
 export function getChapters(publication: string) {
   return dbAll(
-    `SELECT publication, chapter, title, description
+    `SELECT publication, chapter, title, description, 'meta' as kind
     FROM docs WHERE publication=? ORDER BY sortOrder`,
     [publication],
   ).then((docs: IDoc[]) => docs.filter(doc => doc.chapter !== 'index'));
 }
 
 export function getDocument(publication: string, chapter: string) {
-  return dbGet('SELECT * FROM docs WHERE publication=? and chapter=?', [publication, chapter]).then(
-    (doc: IDoc) => {
-      if (doc && doc.format === 'csv') {
-        doc.data = JSON.parse(doc.data);
-      }
-      return doc;
-    },
-  );
+  return dbGet(
+    `SELECT *
+    FROM docs WHERE publication=? and chapter=?`,
+    [publication, chapter],
+  ).then((doc: IDoc) => {
+    if (doc && doc.kind === 'csv') {
+      doc.data = JSON.parse(doc.data);
+    }
+    return doc;
+  });
 }
 
 async function createDatabase(files: watch.FileOrFiles) {

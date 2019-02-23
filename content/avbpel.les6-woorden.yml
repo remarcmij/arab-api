@@ -1,10 +1,14 @@
-title: Tekst 3 - Voor de school - woorden
+title: 6. Woordenlijst
+description: |
+  Deze les gaat over **werkwoorden** en in het bijzonder over het regelmatige
+  **werkwoord** in de **voltooide tijd**, over **de volgorder van de woorden in zinsverband**
+  en over **drie naamvallen** (uitgangen).
 sortOrder: 60
 language:
-format: csv
-fields: ['base', 'foreign', 'trans']
+kind: csv
+fields: ["base", "foreign", "trans"]
 data: |
-  voor (vz. van plaats);أَهَامَ;ʾamāma
+  voor (vz. van plaats);أَمَامَ;ʾamāma
   onthouden, bewaren, uit het hoofd leren;حَفِظَ;ḥafiẓa
   hem, zijn, hij;ﻪُ;-hu
   leren;دَرَسَ;darasa
@@ -12,11 +16,11 @@ data: |
   les;دَرْسٌ (دُرُوسٌ);dars-un
   lezen;قَرَأَ;qaraʾa
   schrijven;كَتَبَ;kataba
-  maar;لٰكِنَّ، وَلٰكَنْ;lākinna, wa-lākin
+  maar;لٰكِنَّ، وَلٰكِنْ;lākinna, wa-lākin
   maar hij;لٰكِنَّهُ;lākinna-hu
   moeilijk;صَعْبٌ (صِعَابٌ);ṣaʿb-un
   nemen;أَخَذَ;ʾaḫaḏa
-  schrift;رَفْتَرٌ (رَفَاتِرُ);daftar-un
+  schrift;دَفْتَرٌ (دَفَاتِرُ);daftar-un
   pen;قَلَمٌ (أَقْلَامٌ);qalam-un
   inkt;حِبْرٌ;ḥibr-un
   daarom;لِذٰلِكَ;li-dālika
@@ -27,14 +31,14 @@ data: |
   niet zijn;لَيْسَ، لَيْسسَتْ (م);laysa (m), laysat (v)
   speelplaats;مَلْعَبٌ (هَلَاعِبُ);malʿab-un
   (school)bord;لَوْحٌ (أَاْوَحٌ);lawḥ-un
-  leerlingen;تَلَاهِيذُ;talāmīḏ-u
+  leerlingen;تَلَامِيذُ;talāmīḏ-u
   leggen, zetten;وَضَعَ;waḍaʿa
-  bureau;هَكْتَبٌ (هَكَاتِبُ);maktab-un
+  bureau;مَكْتَبٌ (مَكَاتِبُ);maktab-un
   klas;فَصْلٌ (فُصُولٌ);faṣl-un
   natuurlijk;طَبْعاً;ṭabʿan
   vragen;سَآَلَ;saʾala
   vraag;سُؤَالٌ (أَسْئِلَةٌ);suʾāl-un
   makkelijk;سَهْلٌ;sahl-un
-  met mij;هَعِي;maʿī
-  met jou;هَعَكَ، هَعَكِ (م);maʿa-ka (m), maʿa-ki (v)
+  met mij;مَعِي;maʿī
+  met jou;مَعَكَ، مَعَكِ (م);maʿa-ka (m), maʿa-ki (v)
   tekst;نَصٌّ (نُصُوصٌ);naṣṣ-un

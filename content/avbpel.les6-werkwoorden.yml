@@ -1,0 +1,4 @@
+title: 6.1 Werkwoorden
+sortOrder: 70
+kind: csv
+fields: ["base", "foreign", "trans"]

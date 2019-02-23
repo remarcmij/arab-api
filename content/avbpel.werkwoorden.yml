@@ -1,4 +1,0 @@
-title: Werkwoorden
-sortOrder: 70
-format: csv
-fields: ['base', 'foreign', 'trans']
