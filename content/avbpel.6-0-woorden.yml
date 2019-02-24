@@ -3,8 +3,6 @@ description: |
   Deze les gaat over **werkwoorden** en in het bijzonder over het regelmatige
   **werkwoord** in de **voltooide tijd**, over **de volgorder van de woorden in zinsverband**
   en over **drie naamvallen** (uitgangen).
-sortOrder: 60
-language:
 kind: csv
 fields: ["base", "foreign", "trans"]
 data: |

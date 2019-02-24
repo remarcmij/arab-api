@@ -1,4 +1,4 @@
-import winston from 'winston';
+import winston from 'winston'
 
 const logger = winston.createLogger({
   defaultMeta: {
@@ -15,7 +15,7 @@ const logger = winston.createLogger({
       filename: 'combined.log',
     }),
   ],
-});
+})
 
 //
 // If we're not in production then log to the `console` with the format:
@@ -26,7 +26,7 @@ if (process.env.NODE_ENV !== 'production') {
     new winston.transports.Console({
       format: winston.format.simple(),
     }),
-  );
+  )
 }
 
-export default logger;
+export default logger
