@@ -1,4 +1,9 @@
 title: 6.1 Werkwoorden
+subtitle: Het regelmatige werkwoord in de voltooide tijd, stam I
+prolog: |
+  De voltooide tijd wordt in het Arabisch الْمَاضِي (_al-māḍī) genoemd. Deze tijd geeft een handeling of
+  gebeurtenis in het verleden aan en komt in betekenis overeen met de Nederlandse onvoltooide tijd
+  (ik schreef) of de voltooid tegenwoordige tijd (ik heb geschreven).
 kind: csv
 fields: ["base", "foreign", "trans"]
 data: |
@@ -16,7 +21,7 @@ data: |
   vragen;سَأَلَ;saʾala
   (weg)gaan;ذَهَبَ;ḏahaba
   wonen;صَكَنَ;sakana
-  begrijpen;فَهَمَ;fahima
+  begrijpen;فَهِمَ;fahima
   (be)rijden;رَكِبَ;rakiba
   drinken;شَرِتَ;šariba
   horen;سَمِعَ;samiʿa

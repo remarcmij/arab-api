@@ -1,11 +1,13 @@
 import fs from 'fs'
+import _glob from 'glob'
 import yaml from 'js-yaml'
 import path from 'path'
 import * as showdown from 'showdown'
 import sqlite3 from 'sqlite3'
 import * as util from 'util'
-import * as watch from 'watch'
 import logger from '../util/logger'
+
+const glob = util.promisify(_glob)
 
 export interface ILemma {
   nl?: string
@@ -14,11 +16,13 @@ export interface ILemma {
   [index: string]: string
 }
 
-export interface IDoc {
+export interface IDocument {
   publication?: string
-  chapter?: string
+  article?: string
   title: string
-  description?: string
+  subtitle?: string
+  prolog?: string
+  epilog?: string
   kind?: 'csv' | 'md'
   fields?: string[]
   data?: string
@@ -27,18 +31,20 @@ export interface IDoc {
 const SQL_CREATE_TABLE = `
   CREATE TABLE docs (
     publication TEXT NOT NULL,
-    chapter TEXT NOT NULL,
+    article TEXT NOT NULL,
     title TEXT NOT NULL,
-    description TEXT,
+    subtitle TEXT,
+    prolog TEXT,
+    epilog TEXT,
     kind TEXT,
     data TEXT,
-    PRIMARY KEY (publication, chapter)
+    PRIMARY KEY (publication, article)
   )`
 
 const SQL_INSERT = `
   INSERT OR REPLACE INTO docs
-    (publication, chapter, title, description, kind, data)
-    VALUES (?,?,?,?,?,?)`
+    (publication, article, title, subtitle, prolog, epilog, kind, data)
+    VALUES (?,?,?,?,?,?,?,?)`
 
 const readFile = util.promisify(fs.readFile)
 const contentDir = path.join(__dirname, '../../content')
@@ -56,30 +62,40 @@ const convertor = new showdown.Converter({
   tables: true,
 })
 
+const stripParaTag = (text: string) => text.slice(3, -4)
+
 const parseFilePath = (filePath: string) => filePath.match(/^.*\/(.+)\.(.+)\.(.+)$/)
 
-async function loadDocument(filePath: string): Promise<IDoc> {
+async function loadDocument(filePath: string): Promise<IDocument> {
   logger.debug(`loading ${filePath}`)
   const data = await readFile(filePath, 'utf8')
-  const [, publication, chapter] = parseFilePath(filePath)
-  const doc: IDoc = yaml.safeLoad(data)
+  const [, publication, article] = parseFilePath(filePath)
+  const doc: IDocument = yaml.safeLoad(data)
   if (!doc.title) {
     throw new Error('Missing title')
   }
   doc.publication = publication
-  doc.chapter = chapter
-  if (doc.description) {
-    doc.description = convertor.makeHtml(doc.description)
+  doc.article = article
+
+  if (doc.subtitle) {
+    doc.subtitle = stripParaTag(convertor.makeHtml(doc.subtitle))
   }
+  if (doc.prolog) {
+    doc.prolog = convertor.makeHtml(doc.prolog)
+  }
+  if (doc.epilog) {
+    doc.epilog = convertor.makeHtml(doc.epilog)
+  }
+
   return doc
 }
 
-function insertDoc(doc: IDoc) {
-  const { title, kind, description, publication, chapter, data } = doc
-  return dbRun(SQL_INSERT, [publication, chapter, title, description, kind, data])
+function insertDoc(doc: IDocument) {
+  const { publication, article, title, subtitle, prolog, epilog, kind, data } = doc
+  return dbRun(SQL_INSERT, [publication, article, title, subtitle, prolog, epilog, kind, data])
 }
 
-async function loadParsedContent(filePath: string): Promise<IDoc> {
+async function loadParsedContent(filePath: string): Promise<IDocument> {
   const doc = await loadDocument(filePath)
 
   if (doc.kind && !doc.data) {
@@ -117,25 +133,25 @@ async function loadParsedContent(filePath: string): Promise<IDoc> {
 
 export function getIndex() {
   return dbAll(
-    `SELECT publication, chapter, title, description, 'meta' as kind
-    FROM docs WHERE chapter="index" ORDER BY publication`,
+    `SELECT publication, article, title, subtitle, prolog, 'meta' as kind
+    FROM docs WHERE article="index" ORDER BY publication`,
   )
 }
 
 export function getChapters(publication: string) {
   return dbAll(
-    `SELECT publication, chapter, title, description, 'meta' as kind
-    FROM docs WHERE publication=? ORDER BY chapter`,
+    `SELECT publication, article, title, subtitle, prolog,'meta' as kind
+    FROM docs WHERE publication=? ORDER BY article`,
     [publication],
-  ).then((docs: IDoc[]) => docs.filter(doc => doc.chapter !== 'index'))
+  ).then((docs: IDocument[]) => docs.filter(doc => doc.article !== 'index'))
 }
 
-export function getDocument(publication: string, chapter: string) {
+export function getDocument(publication: string, article: string) {
   return dbGet(
     `SELECT *
-    FROM docs WHERE publication=? and chapter=?`,
-    [publication, chapter],
-  ).then((doc: IDoc) => {
+    FROM docs WHERE publication=? and article=?`,
+    [publication, article],
+  ).then((doc: IDocument) => {
     if (doc && doc.kind === 'csv') {
       doc.data = JSON.parse(doc.data)
     }
@@ -143,27 +159,34 @@ export function getDocument(publication: string, chapter: string) {
   })
 }
 
-async function createDatabase(files: watch.FileOrFiles) {
-  await dbRun(SQL_CREATE_TABLE)
-  const promises = Object.entries(files)
-    .filter(([, stats]) => stats.isFile())
-    .map(([filePath]) => loadParsedContent(filePath).then(insertDoc))
-  await Promise.all(promises)
+async function loadContent(filePaths: string[]) {
+  try {
+    const promises = filePaths.map(filePath => loadParsedContent(filePath).then(insertDoc))
+    await Promise.all(promises)
+  } catch (err) {
+    console.error(`error: ${err.message}`)
+  }
 }
 
-watch.watchTree(
-  contentDir,
-  { filter: (file: string) => /\.yml$/.test(file) },
-  (file, curr, prev) => {
-    if (typeof file === 'object' && prev === null && curr === null) {
-      createDatabase(file)
-    } else if (prev === null) {
-      loadParsedContent((file as unknown) as string).then(insertDoc)
-    } else if (curr.nlink === 0) {
-      const [, publication, chapter] = parseFilePath((file as unknown) as string)
-      dbRun(`DELETE FROM docs WHERE publication=? AND chapter=?`, [publication, chapter])
-    } else {
-      loadParsedContent((file as unknown) as string).then(insertDoc)
-    }
-  },
-)
+async function scanAndLoad() {
+  try {
+    await dbRun('DELETE FROM docs')
+    const matches = await glob(`${contentDir}/*.yml`)
+    await loadContent(matches)
+  } catch (error) {
+    logger.error(error)
+  }
+}
+async function monitor() {
+  try {
+    await dbRun(SQL_CREATE_TABLE)
+    scanAndLoad()
+    fs.watch(contentDir, () => {
+      scanAndLoad()
+    })
+  } catch (error) {
+    logger.error(error)
+  }
+}
+
+monitor()
