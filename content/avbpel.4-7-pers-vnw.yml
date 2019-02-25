@@ -3,14 +3,14 @@ kind: csv
 fields: ["base", "foreign", "trans"]
 data: |
   ik;أَنَا;ʾanā
-  jij (m);أَنتَ;ʾanta
-  jij (v);أَنتِ;ʾanti
+  jij (m);أَنْتَ;ʾanta
+  jij (v);أَنْتِ;ʾanti
   hij;هُوَ;huwa
   zij;هِيَ;hiya
   wij;نَحْنُ;naḥnu
-  jullie (m);أَنْتُم;ʾantum
+  jullie (m);أَنْتُمْ;ʾantum
   julie (v);أَنْتُنَّ;ʾantunna
-  jullie (2);أَنْتُما;ʾantumā
-  zij (m);هُم;hum
+  jullie (2);أَنْتُمَا;ʾantumā
+  zij (m);هُمْ;hum
   zij (v);هُنَّ;hunna
-  zij (2);هُما;humā
+  zij (2);هُمَا;humā

@@ -2,21 +2,21 @@ title: 5.3 Bijvoeglijke naamwoorden
 kind: csv
 fields: ["base", "foreign", "trans"]
 data: |
-  dichtbij;قَرِيبٌ;qarīb-un
-  duur;غَالٍ;ġālin
-  gezond;سَلِيمٌ;salīm-un
-  goedkoop;رَخِيصٌ;raḫīṣ-un
   groot;كَبِيرٌ;kabīr-un
   klein;صَغِيرٌ;ṣaġīr-un
-  kort;قَصِيرٌ;qaṣīr-un
   lang;طَوِيلٌ;ṭawīl-un
-  lelijk;قَبِيحٌ;qabīḥ-un
-  licht (gewicht);خَفِيفٌ;ḫafīf-un
-  mooi;جَمِيلٌ;jamīl-un
+  kort;قَصِيرٌ;qaṣīr-un
+  veel (uitz. = bw.);كَثِيرٌ;kaṯīr-un
+  weinig;قَلِيلٌ;qalīl-un
   nieuw;جَدِيدٌ;jadīd-un
   oud (zaken);قَدِيمٌ;qadīm-un
-  veel;كَثِيرٌ;kaṯīr-un
-  ver(af);بَعِيدٌ;baʿīd-un
-  weinig;قَلِيلٌ;qalīl-un
+  mooi;جَمِيلٌ;jamīl-un
+  lelijk;قَبِيحٌ;qabīḥ-un
+  duur;غَالٍ;ġālin
+  goedkoop;رَخِيصٌ;raḫīṣ-un
   ziek;مَرِيضٌ;marīḍ-un
+  gezond;سَلِيمٌ;salīm-un
+  dichtbij;قَرِيبٌ;qarīb-un
+  ver(af);بَعِيدٌ;baʿīd-un
   zwaar;ثَقِيلٌ;ṯaqīl-un
+  licht (gewicht);خَفِيفٌ;ḫafīf-un
