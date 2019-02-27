@@ -1,3 +1,8 @@
+---
+title: "7.4 Persoonlijke voornaamwoorden (2)"
+kind: md
+---
+
 |bezittelijk vnw.||na een zelfst. nw.||na een voorzetsel|na een werkwoord|losstaand|
 |----------------|------:|:----------------:|:--------:|:---------------:|:--------------:|:-------:|
 |mijn|ي ، ني|كِتَابِي|mij|مَعِي|تَرَكَنِي|أَنَا|

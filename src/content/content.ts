@@ -1,3 +1,4 @@
+import fm from 'front-matter'
 import fs from 'fs'
 import _glob from 'glob'
 import yaml from 'js-yaml'
@@ -9,24 +10,34 @@ import logger from '../util/logger'
 
 const glob = util.promisify(_glob)
 
-export interface ILemma {
+interface ILemma {
   nl?: string
   ar?: string
   trans?: string
   [index: string]: string
 }
 
-export interface IDocument {
+interface IAttributes {
   publication?: string
   article?: string
   title: string
   subtitle?: string
   prolog?: string
   epilog?: string
-  kind?: 'csv' | 'md'
+  kind?: 'table' | 'md'
   fields?: string[]
-  data?: string
 }
+
+export interface IMarkdownDocument {
+  attributes: IAttributes
+  body?: string
+}
+
+interface IDatabaseDocument extends IAttributes {
+  body: string
+}
+
+const VALID_FIELD_NAMES = ['base', 'foreign', 'trans']
 
 const SQL_CREATE_TABLE = `
   CREATE TABLE docs (
@@ -37,13 +48,13 @@ const SQL_CREATE_TABLE = `
     prolog TEXT,
     epilog TEXT,
     kind TEXT,
-    data TEXT,
+    body TEXT,
     PRIMARY KEY (publication, article)
   )`
 
 const SQL_INSERT = `
   INSERT OR REPLACE INTO docs
-    (publication, article, title, subtitle, prolog, epilog, kind, data)
+    (publication, article, title, subtitle, prolog, epilog, kind, body)
     VALUES (?,?,?,?,?,?,?,?)`
 
 const readFile = util.promisify(fs.readFile)
@@ -66,68 +77,78 @@ const stripParaTag = (text: string) => text.slice(3, -4)
 
 const parseFilePath = (filePath: string) => filePath.match(/^.*\/(.+)\.(.+)\.(.+)$/)
 
-async function loadDocument(filePath: string): Promise<IDocument> {
+async function loadDocument(filePath: string): Promise<IMarkdownDocument> {
   logger.debug(`loading ${filePath}`)
   const data = await readFile(filePath, 'utf8')
   const [, publication, article] = parseFilePath(filePath)
-  const doc: IDocument = yaml.safeLoad(data)
-  if (!doc.title) {
-    throw new Error('Missing title')
-  }
-  doc.publication = publication
-  doc.article = article
 
-  if (doc.subtitle) {
-    doc.subtitle = stripParaTag(convertor.makeHtml(doc.subtitle))
+  const doc: IMarkdownDocument = fm<IAttributes>(data)
+  const attributes = { ...doc.attributes, publication, article }
+
+  if (attributes.subtitle) {
+    attributes.subtitle = stripParaTag(convertor.makeHtml(attributes.subtitle))
   }
-  if (doc.prolog) {
-    doc.prolog = convertor.makeHtml(doc.prolog)
+  if (attributes.prolog) {
+    attributes.prolog = convertor.makeHtml(attributes.prolog)
   }
-  if (doc.epilog) {
-    doc.epilog = convertor.makeHtml(doc.epilog)
+  if (attributes.epilog) {
+    attributes.epilog = convertor.makeHtml(attributes.epilog)
   }
 
-  return doc
+  return { attributes, body: doc.body }
 }
 
-function insertDoc(doc: IDocument) {
-  const { publication, article, title, subtitle, prolog, epilog, kind, data } = doc
-  return dbRun(SQL_INSERT, [publication, article, title, subtitle, prolog, epilog, kind, data])
+function insertDoc(doc: IMarkdownDocument) {
+  const { publication, article, title, subtitle, prolog, epilog, kind } = doc.attributes
+  return dbRun(SQL_INSERT, [publication, article, title, subtitle, prolog, epilog, kind, doc.body])
 }
 
-async function loadParsedContent(filePath: string): Promise<IDocument> {
+function parseTable(doc: IMarkdownDocument) {
+  const { attributes, body } = doc
+
+  const lines = body.trim().split('\n')
+  if (lines.length < 3) {
+    throw new Error('Expected at minimum 3 lines (header, separator, data) in table')
+  }
+  const fields = lines[0]
+    .trim()
+    .split('|')
+    .map(field => field.trim())
+  if (fields.length < 2) {
+    throw new Error('Expected at minimum 2 fields in table')
+  }
+  fields.forEach(field => {
+    if (!VALID_FIELD_NAMES.includes(field)) {
+      throw new Error(`Invalid table field name: ${field}`)
+    }
+  })
+  attributes.fields = fields
+  const lemmas: ILemma[] = lines.slice(3).map(line => {
+    const lemma: ILemma = {}
+    const cells = line.trim().split('|')
+    cells.forEach((cell, index) => {
+      lemma[fields[index]] = cell.trim()
+    })
+    return lemma
+  })
+  return { attributes, body: JSON.stringify(lemmas) }
+}
+
+async function loadParsedContent(filePath: string): Promise<IMarkdownDocument> {
   const doc = await loadDocument(filePath)
+  const { attributes, body } = doc
 
-  if (doc.kind && !doc.data) {
-    const dataFilePath = filePath.replace(/yml$/, doc.kind)
-    try {
-      logger.debug(`loading ${dataFilePath}`)
-      doc.data = await readFile(dataFilePath, 'utf8')
-    } catch (_) {
-      doc.data = ''
-    }
-  }
-
-  switch (doc.kind) {
+  switch (attributes.kind) {
     case 'md':
-      return { ...doc, data: convertor.makeHtml(doc.data) }
-
-    case 'csv': {
-      const { fields, data } = doc
-      const lines = data.trim().split('\n')
-      const lemmas: ILemma[] = lines.map(line => {
-        const items = line.trim().split(';')
-        const lemma: ILemma = {}
-        items.forEach((item, index) => {
-          lemma[fields[index]] = item
-        })
-        return lemma
-      })
-      return { ...doc, data: JSON.stringify(lemmas) }
+      return { attributes, body: convertor.makeHtml(body) }
+    case 'table': {
+      return parseTable(doc)
     }
-
     default:
-      return doc
+      if (attributes.article === 'index') {
+        return doc
+      }
+      throw new Error(`Unexpected document kind: ${attributes.kind}`)
   }
 }
 
@@ -143,7 +164,7 @@ export function getChapters(publication: string) {
     `SELECT publication, article, title, subtitle, prolog,'meta' as kind
     FROM docs WHERE publication=? ORDER BY article`,
     [publication],
-  ).then((docs: IDocument[]) => docs.filter(doc => doc.article !== 'index'))
+  ).then((docs: IDatabaseDocument[]) => docs.filter(doc => doc.article !== 'index'))
 }
 
 export function getDocument(publication: string, article: string) {
@@ -151,9 +172,9 @@ export function getDocument(publication: string, article: string) {
     `SELECT *
     FROM docs WHERE publication=? and article=?`,
     [publication, article],
-  ).then((doc: IDocument) => {
-    if (doc && doc.kind === 'csv') {
-      doc.data = JSON.parse(doc.data)
+  ).then((doc: IDatabaseDocument) => {
+    if (doc && doc.kind === 'table') {
+      doc.body = JSON.parse(doc.body)
     }
     return doc
   })
@@ -171,7 +192,7 @@ async function loadContent(filePaths: string[]) {
 async function scanAndLoad() {
   try {
     await dbRun('DELETE FROM docs')
-    const matches = await glob(`${contentDir}/*.yml`)
+    const matches = await glob(`${contentDir}/*.md`)
     await loadContent(matches)
   } catch (error) {
     logger.error(error)

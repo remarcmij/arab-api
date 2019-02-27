@@ -1,0 +1,30 @@
+---
+title: 8.3 Voorzetsels
+kind: table
+---
+
+base | foreign | trans
+---- | ------: | -----
+in, bij, op (fig.) | فِي | fī
+op, tegen (plaats) | عَلَى | ʿalā
+onder | تَحْتَ | taḥta
+boven(op), onder | فَوْقَ | fawqa
+bij, van | عِنْدَ | ʿinda
+vanuit, uit | مِنْ | min
+sinds | مُنْذُ | munḍu
+zonder | بِلاَ | bilā
+door, met, per, in | بِ | bi
+met, ondanks | مَعَ | maʿa
+naar | إِلَى | ʾilā
+in de richting van | نَحْوَ | naḥwa
+aan, van | لِ | li
+over (via, langs, m.b.t.) | عَنْ | ʿan
+bij (personen: bezit) | لَدَى | ladā
+voor (tijd) | قَبْلَ | qabla
+na (tijd) | بَعْدَ | baʿda
+voor (plaats) | أَمَامَ | ʾamāma
+achter(na) | وَرَاءَ | warā’a
+tussen | بَيْنَ | bayna
+tegen (anti) | ضِدَّ | ḍidda
+rond(om) | حَوْلَ | hawla
+naast | جَنْبَ | janba

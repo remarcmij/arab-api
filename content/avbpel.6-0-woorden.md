@@ -1,0 +1,46 @@
+---
+title: 6. Woordenlijst
+subtitle: Tekst 3. Voor de school
+prolog: |
+  Deze les gaat over **werkwoorden** en in het bijzonder over het regelmatige
+  **werkwoord** in de **voltooide tijd**, over **de volgorder van de woorden in zinsverband**
+  en over **drie naamvallen** (uitgangen).
+kind: table
+---
+
+base | foreign | trans
+---- | ------: | -----
+voor (vz. van plaats) | أَمَامَ | ʾamāma
+onthouden, bewaren, uit het hoofd leren | حَفِظَ | ḥafiẓa
+hem, zijn, hij | ﻪُ | -hu
+leren | دَرَسَ | darasa
+God beware je! | حَفِظَك اللّٰه! | ḥafiẓa-k allāh
+les | دَرْسٌ (دُرُوسٌ) | dars-un
+lezen | قَرَأَ | qaraʾa
+schrijven | كَتَبَ | kataba
+maar | لٰكِنَّ، وَلٰكِنْ | lākinna, wa-lākin
+maar hij | لٰكِنَّهُ | lākinna-hu
+moeilijk | صَعْبٌ (صِعَابٌ) | ṣaʿb-un
+nemen | أَخَذَ | ʾaḫaḏa
+schrift | دَفْتَرٌ (دَفَاتِرُ) | daftar-un
+pen | قَلَمٌ (أَقْلَامٌ) | qalam-un
+inkt | حِبْرٌ | ḥibr-un
+daarom | لِذٰلِكَ | li-dālika
+vergeten | نَسِيَ | nasiya
+Yusuf | يُوسُفْ | yūsuf
+binnengaan | دَخَلَ | daḫala
+'de meester' | أَلْمُعَلِّمُ | al-muʿallim-u
+niet zijn | لَيْسَ، لَيْسسَتْ (م) | laysa (m), laysat (v)
+speelplaats | مَلْعَبٌ (هَلَاعِبُ) | malʿab-un
+(school)bord | لَوْحٌ (أَاْوَحٌ) | lawḥ-un
+leerlingen | تَلَامِيذُ | talāmīḏ-u
+leggen, zetten | وَضَعَ | waḍaʿa
+bureau | مَكْتَبٌ (مَكَاتِبُ) | maktab-un
+klas | فَصْلٌ (فُصُولٌ) | faṣl-un
+natuurlijk | طَبْعاً | ṭabʿan
+vragen | سَآَلَ | saʾala
+vraag | سُؤَالٌ (أَسْئِلَةٌ) | suʾāl-un
+makkelijk | سَهْلٌ | sahl-un
+met mij | مَعِي | maʿī
+met jou | مَعَكَ، مَعَكِ (م) | maʿa-ka (m), maʿa-ki (v)
+tekst | نَصٌّ (نُصُوصٌ) | naṣṣ-un

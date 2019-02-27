@@ -1,3 +1,9 @@
+---
+title: Engelse grammaticatermen
+description: Nothing to see here
+kind: md
+---
+
 # Engelse grammaticatermen
 
 |Engels|afk.|Nederlands|
