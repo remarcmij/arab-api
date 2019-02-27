@@ -1,7 +1,6 @@
 import fm from 'front-matter'
 import fs from 'fs'
 import _glob from 'glob'
-import yaml from 'js-yaml'
 import path from 'path'
 import * as showdown from 'showdown'
 import sqlite3 from 'sqlite3'
