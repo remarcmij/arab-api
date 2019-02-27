@@ -27,20 +27,22 @@ pen | قَلَمٌ (أَقْلَامٌ) | qalam-un
 inkt | حِبْرٌ | ḥibr-un
 daarom | لِذٰلِكَ | li-dālika
 vergeten | نَسِيَ | nasiya
-Yusuf | يُوسُفْ | yūsuf
+Yusuf | يُوسُف | yūsuf
 binnengaan | دَخَلَ | daḫala
 'de meester' | أَلْمُعَلِّمُ | al-muʿallim-u
-niet zijn | لَيْسَ، لَيْسسَتْ (م) | laysa (m), laysat (v)
-speelplaats | مَلْعَبٌ (هَلَاعِبُ) | malʿab-un
-(school)bord | لَوْحٌ (أَاْوَحٌ) | lawḥ-un
+niet zijn (m) | لَيْسَ | laysa
+niet zijn (v) | لَيْسَتْ | laysat
+speelplaats | مَلْعَبٌ (مَلَاعِبُ) | malʿab-un
+(school)bord | لَوْحٌ (أَاْوَاحٌ) | lawḥ-un
 leerlingen | تَلَامِيذُ | talāmīḏ-u
 leggen, zetten | وَضَعَ | waḍaʿa
 bureau | مَكْتَبٌ (مَكَاتِبُ) | maktab-un
 klas | فَصْلٌ (فُصُولٌ) | faṣl-un
 natuurlijk | طَبْعاً | ṭabʿan
-vragen | سَآَلَ | saʾala
+vragen | سَأَلَ | saʾala
 vraag | سُؤَالٌ (أَسْئِلَةٌ) | suʾāl-un
 makkelijk | سَهْلٌ | sahl-un
 met mij | مَعِي | maʿī
-met jou | مَعَكَ، مَعَكِ (م) | maʿa-ka (m), maʿa-ki (v)
+met jou (m) | مَعَكَ | maʿa-ka
+met jou (v) | مَعَكِ | maʿa-ki
 tekst | نَصٌّ (نُصُوصٌ) | naṣṣ-un

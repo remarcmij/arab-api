@@ -1,5 +1,6 @@
 ---
-title: "7.4 Persoonlijke voornaamwoorden (2)"
+title: 7.4 Persoonlijke voornaamwoorden
+subtitle: Schema
 kind: md
 ---
 
