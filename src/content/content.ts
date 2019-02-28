@@ -57,7 +57,11 @@ const SQL_INSERT = `
     VALUES (?,?,?,?,?,?,?,?)`
 
 const readFile = util.promisify(fs.readFile)
-const contentDir = path.join(__dirname, '../../content')
+
+const contentDir = path.join(
+  __dirname,
+  process.env.NODE_ENV === 'development' ? '../../../arab-content/content' : '../../content',
+)
 
 const db = new sqlite3.Database(':memory:')
 const dbRun = util.promisify(db.run.bind(db))
@@ -122,7 +126,7 @@ function parseTable(doc: IMarkdownDocument) {
     }
   })
   attributes.fields = fields
-  const lemmas: ILemma[] = lines.slice(3).map(line => {
+  const lemmas: ILemma[] = lines.slice(2).map(line => {
     const lemma: ILemma = {}
     const cells = line.trim().split('|')
     cells.forEach((cell, index) => {
@@ -160,7 +164,7 @@ export function getIndex() {
 
 export function getChapters(publication: string) {
   return dbAll(
-    `SELECT publication, article, title, subtitle, prolog,'meta' as kind
+    `SELECT publication, article, title, subtitle, prolog, kind
     FROM docs WHERE publication=? ORDER BY article`,
     [publication],
   ).then((docs: IDatabaseDocument[]) => docs.filter(doc => doc.article !== 'index'))
