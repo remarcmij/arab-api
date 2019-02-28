@@ -8,7 +8,7 @@
     "dev:start": "npm-run-all build start",
     "dev": "nodemon --watch src --ext ts --exec npm run dev:start",
     "start": "node .",
-    "vsc-start": "nodemon --ext js --watch dist .",
+    "vsc-start": "NODE_ENV=development nodemon --ext js --watch dist .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
