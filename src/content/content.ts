@@ -117,6 +117,7 @@ function parseTable(doc: IMarkdownDocument) {
     .trim()
     .split('|')
     .map(field => field.trim())
+    .filter(field => field !== '')
   if (fields.length < 2) {
     throw new Error('Expected at minimum 2 fields in table')
   }
