@@ -1,3 +1,4 @@
+require('dotenv').load()
 import compression from 'compression'
 import cors from 'cors'
 import express from 'express'
@@ -5,6 +6,7 @@ import morgan from 'morgan'
 import path from 'path'
 import lessonRoutes from './routes/lessons'
 import logger from './util/logger'
+import * as content from './content/content'
 
 const PORT = 8080 // default port to listen
 
@@ -35,6 +37,7 @@ const main = async () => {
   app.route('/*').get((req, res) => res.sendFile('index.html', { root: docRoot }))
 
   app.listen(PORT, () => {
+    content.monitor()
     logger.info(`server started at http://localhost:${PORT}`)
   })
 }

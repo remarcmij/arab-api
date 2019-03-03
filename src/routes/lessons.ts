@@ -1,17 +1,17 @@
 import express, { Request, Response } from 'express'
-import * as content from '../content/content'
+import * as db from '../content/database'
 
 function getIndex(_: Request, res: Response) {
-  content.getIndex().then((rows: any) => res.json(rows))
+  db.getIndex().then((rows: any) => res.json(rows))
 }
 
 function getChapters(req: Request, res: Response) {
-  content.getChapters(req.params.publication).then((rows: any) => res.json(rows))
+  db.getChapters(req.params.publication).then((rows: any) => res.json(rows))
 }
 
 function getDocument(req: Request, res: Response) {
-  const { publication, article } = req.params
-  content.getDocument(publication, article).then(
+  const { filename } = req.params
+  db.getDocument(filename).then(
     (doc: any): void => {
       if (!doc) {
         return void res.sendStatus(404)
@@ -25,7 +25,7 @@ const router = express.Router()
 
 router
   .get('/', getIndex)
-  .get('/:publication', getChapters)
-  .get('/:publication/:article', getDocument)
+  .get('/index/:publication', getChapters)
+  .get('/article/:filename', getDocument)
 
 export default router

@@ -1,5 +1,9 @@
 {
-  "cSpell.words": ["strikethrough", "subfolder"],
+  "cSpell.words": [
+    "Tashkeel",
+    "strikethrough",
+    "subfolder"
+  ],
   "cSpell.ignorePaths": [
     "**/package-lock.json",
     "**/node_modules/**",
