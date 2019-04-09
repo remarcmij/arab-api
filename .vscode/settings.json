@@ -2,7 +2,8 @@
   "cSpell.words": [
     "Tashkeel",
     "strikethrough",
-    "subfolder"
+    "subfolder",
+    "wordlist"
   ],
   "cSpell.ignorePaths": [
     "**/package-lock.json",

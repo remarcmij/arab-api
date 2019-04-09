@@ -4,11 +4,8 @@
   "rules": {
     "arrow-parens": false,
     "quotemark": [true, "single"],
-    "semicolon": [true, "never"],
-    "no-console": {
-      "severity": "warning",
-      "options": ["debug", "info", "log", "time", "timeEnd", "trace"]
-    }
+    "semicolon": [true, "always"],
+    "no-console": false
   },
   "jsRules": {},
   "rulesDirectory": []
