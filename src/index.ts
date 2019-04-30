@@ -22,7 +22,12 @@ const staticOptions = {
   },
 };
 
-const docRoot = path.resolve(__dirname, '../public');
+const clientPath =
+  process.env.NODE_ENV === 'production'
+    ? '../public'
+    : '../../arab-client/build';
+
+const docRoot = path.resolve(__dirname, clientPath);
 
 const main = async () => {
   const app = express();
@@ -34,7 +39,9 @@ const main = async () => {
 
   app.use('/api', lessonRoutes);
 
-  app.route('/*').get((req, res) => res.sendFile('index.html', { root: docRoot }));
+  app
+    .route('/*')
+    .get((req, res) => res.sendFile('index.html', { root: docRoot }));
 
   app.listen(PORT, () => {
     content.watchContent();

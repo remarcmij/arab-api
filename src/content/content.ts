@@ -7,7 +7,13 @@ import util from 'util';
 import logger from '../util/logger';
 import * as db from './database';
 import crypto from 'crypto';
-import { IAttributes, IIndexDocument, IWord, ILemmaDocument, IMarkdownDocument } from './database';
+import {
+  IAttributes,
+  IIndexDocument,
+  IWord,
+  ILemmaDocument,
+  IMarkdownDocument,
+} from './database';
 
 const glob = util.promisify(_glob);
 const fsAccess = util.promisify(fs.access);
@@ -23,7 +29,9 @@ const readFile = util.promisify(fs.readFile);
 
 const contentDir = path.join(
   __dirname,
-  process.env.NODE_ENV === 'development' ? '../../../arab-content/content' : '../../content',
+  process.env.NODE_ENV === 'development'
+    ? '../../../arab-content/content'
+    : '../../content',
 );
 
 const convertor = new showdown.Converter({
@@ -111,7 +119,9 @@ async function loadDocument(
 function parseTable(body: string) {
   const lines = body.trim().split('\n');
   if (lines.length < 3) {
-    throw new Error('Expected at minimum 3 lines (header, separator, data) in table');
+    throw new Error(
+      'Expected at minimum 3 lines (header, separator, data) in table',
+    );
   }
   const fields = lines[0]
     .trim()

@@ -73,7 +73,11 @@ export async function insertDocument(doc: IMarkdownDocument | ILemmaDocument) {
   }
 
   return docPromise.then(({ insertId: doc_id }: { insertId: number }) => {
-    const data = doc.words.map(({ base, foreign }) => [base, stripTashkeel(foreign), doc_id]);
+    const data = doc.words.map(({ base, foreign }) => [
+      base,
+      stripTashkeel(foreign),
+      doc_id,
+    ]);
     return queryPromise(sql2, [data]);
   });
 }
@@ -116,5 +120,7 @@ export function deleteDocument(filename: string) {
 }
 
 export function dictLookup(term: string) {
-  return queryPromise('SELECT * FROM dict WHERE base LIKE ? ORDER BY base', [`${term}%`]);
+  return queryPromise('SELECT * FROM dict WHERE base LIKE ? ORDER BY base', [
+    `${term}%`,
+  ]);
 }

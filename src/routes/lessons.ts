@@ -25,7 +25,9 @@ function getDocument(req: Request, res: Response) {
 function dictLookup(req: Request, res: Response): void {
   const { term, id } = req.query;
   if (!term) {
-    return void res.status(400).json({ error: 'Empty search term is invalid.' });
+    return void res
+      .status(400)
+      .json({ error: 'Empty search term is invalid.' });
   }
   if (!id) {
     return void res.status(400).json({ error: 'Search id is required.' });
