@@ -11,16 +11,21 @@ CREATE TABLE `docs` (
   PRIMARY KEY (`id`)
 );
 
-CREATE TABLE `dict` (
+CREATE TABLE `lemmas` (
   `id` INT NOT NULL AUTO_INCREMENT, 
-  `base` VARCHAR(64) NOT NULL,
-  `foreign` VARCHAR(64) NOT NULL,
-  `word_class` VARCHAR(20) DEFAULT NULL,
-  `notes` VARCHAR(255) DEFAULT NULL,
+  `source` VARCHAR(256) NOT NULL,
+  `target` VARCHAR(256) NOT NULL,
+  `roman` VARCHAR(256) DEFAULT NULL,
   `doc_id` INT NOT NULL,
   PRIMARY KEY (`id`),
-  KEY (`base`),
-  KEY (`foreign`),
-  KEY (`word_class`),
   FOREIGN KEY (`doc_id`) REFERENCES `docs` (`id`) ON DELETE CASCADE
+);
+
+CREATE TABLE `words` (
+  `id` INT NOT NULL AUTO_INCREMENT, 
+  `word` VARCHAR(256) NOT NULL,
+  `lang` CHAR(2) NOT NULL,
+  `lemma_id` INT NOT NULL, 
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`lemma_id`) REFERENCES `lemmas` (`id`) ON DELETE CASCADE
 );
