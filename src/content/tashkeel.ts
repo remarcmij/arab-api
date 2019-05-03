@@ -1,5 +1,5 @@
-const CHARCODE_SUPERSCRIPT_ALIF = 1648;
-const CHARCODE_TATWEEL = 1600;
+const CHARCODE_SUPERSCRIPT_ALIF = 0x670;
+const CHARCODE_TATWEEL = 0x640;
 
 function isCharTashkeel(letter: string) {
   const code = letter.charCodeAt(0);

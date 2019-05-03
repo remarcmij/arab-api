@@ -4,7 +4,7 @@ import cors from 'cors';
 import express from 'express';
 import morgan from 'morgan';
 import path from 'path';
-import lessonRoutes from './routes/lessons';
+import apiRouter from './routes/apiRouter';
 import logger from './util/logger';
 import * as content from './content/content';
 
@@ -37,14 +37,15 @@ const main = async () => {
   app.use(express.json());
   app.use(express.static(docRoot, staticOptions));
 
-  app.use('/api', lessonRoutes);
+  app.use('/api', apiRouter);
 
   app
     .route('/*')
     .get((req, res) => res.sendFile('index.html', { root: docRoot }));
 
-  app.listen(PORT, () => {
-    content.watchContent();
+  app.listen(PORT, async () => {
+    await content.refreshContent();
+    await content.watchContent();
     logger.info(`server started at http://localhost:${PORT}`);
   });
 };

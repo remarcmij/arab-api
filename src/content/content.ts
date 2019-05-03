@@ -1,19 +1,19 @@
+import crypto from 'crypto';
 import fm from 'front-matter';
 import fs from 'fs';
 import _glob from 'glob';
 import path from 'path';
 import showdown from 'showdown';
-import util from 'util';
-import logger from '../util/logger';
-import * as db from './database';
-import crypto from 'crypto';
 import {
   IAttributes,
   IIndexDocument,
-  IWord,
   ILemmaDocument,
   IMarkdownDocument,
-} from './database';
+} from 'Types';
+import util from 'util';
+import logger from '../util/logger';
+import * as db from './database';
+import { parseTable } from './table-parser';
 
 const glob = util.promisify(_glob);
 const fsAccess = util.promisify(fs.access);
@@ -23,15 +23,13 @@ export interface IFrontMatterDocument {
   body: string;
 }
 
-const VALID_FIELD_NAMES = ['base', 'foreign', 'trans'];
-
 const readFile = util.promisify(fs.readFile);
 
 const contentDir = path.join(
   __dirname,
-  process.env.NODE_ENV === 'development'
-    ? '../../../arab-content/content'
-    : '../../content',
+  process.env.NODE_ENV === 'production'
+    ? '../../content'
+    : '../../../arab-content/content',
 );
 
 const convertor = new showdown.Converter({
@@ -59,9 +57,9 @@ async function loadDocument(
   const [, publication, article] = parseFilename(filename);
   const filenameBase = `${publication}.${article}`;
 
-  const data = await readFile(filePath, 'utf8');
+  const docText = await readFile(filePath, 'utf8');
 
-  const sha = computeSha(data);
+  const sha = computeSha(docText);
   const docSha = await db.getDocumentSha(filenameBase);
 
   if (sha === docSha) {
@@ -73,7 +71,7 @@ async function loadDocument(
 
   await db.deleteDocument(filenameBase);
 
-  const doc: IFrontMatterDocument = fm<IAttributes>(data);
+  const doc: IFrontMatterDocument = fm<IAttributes>(docText);
   const attr = {
     ...doc.attributes,
     filename: filenameBase,
@@ -101,54 +99,26 @@ async function loadDocument(
     case 'index':
       insertDoc = { ...attr, kind: 'index' };
       break;
-    case 'wordlist':
-      const { fields, words } = parseTable(doc.body);
-      insertDoc = { ...attr, kind: 'wordlist', fields, words };
+    case 'lemmas':
+      const lemmas = parseTable(doc.body);
+      insertDoc = { ...attr, kind: 'lemmas', lemmas };
       break;
-    default:
+    case 'text':
       insertDoc = {
         ...attr,
         kind: 'text',
         body: convertor.makeHtml(doc.body),
       };
+      break;
+    default:
+      console.log(`Ignoring document kind: '${attr.kind}'`);
+      return;
   }
 
   db.insertDocument(insertDoc);
 }
 
-function parseTable(body: string) {
-  const lines = body.trim().split('\n');
-  if (lines.length < 3) {
-    throw new Error(
-      'Expected at minimum 3 lines (header, separator, data) in table',
-    );
-  }
-  const fields = lines[0]
-    .trim()
-    .split('|')
-    .map(field => field.trim())
-    .filter(field => field !== '');
-  if (fields.length < 2) {
-    throw new Error('Expected at minimum 2 fields in table');
-  }
-  fields.forEach(field => {
-    if (!VALID_FIELD_NAMES.includes(field)) {
-      throw new Error(`Invalid table field name: ${field}`);
-    }
-  });
-  const words = lines.slice(2).map(line => {
-    const word: IWord = {};
-    const cells = line.trim().split('|');
-    cells.forEach((cell, index) => {
-      word[fields[index]] = cell.trim();
-    });
-    return word;
-  });
-
-  return { fields, words: words };
-}
-
-async function scanAndLoad() {
+export async function refreshContent() {
   const filePaths = await glob(`${contentDir}/*.md`);
   filePaths.forEach(async filePath => {
     const [, filename] = filePath.match(/^.*[/\\](.+)$/);
@@ -158,7 +128,6 @@ async function scanAndLoad() {
 
 export async function watchContent() {
   try {
-    scanAndLoad();
     fs.watch(contentDir, async (event, filename) => {
       try {
         const filePath = path.join(contentDir, filename);
@@ -170,9 +139,7 @@ export async function watchContent() {
           case 'rename': {
             await fsAccess(filePath).then(
               () => loadDocument(filename),
-              () => {
-                db.deleteDocument(filename);
-              },
+              () => db.deleteDocument(filename),
             );
             break;
           }

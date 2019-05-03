@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import * as db from '../content/database';
-import { IWord } from '../content/database';
+import { ILemma } from 'Types';
 
 function getIndex(_: Request, res: Response) {
   db.getIndex().then((rows: any) => res.json(rows));
@@ -22,20 +22,17 @@ function getDocument(req: Request, res: Response) {
   );
 }
 
-function dictLookup(req: Request, res: Response): void {
-  const { term, id } = req.query;
+function searchWord(req: Request, res: Response): void {
+  const { term } = req.query;
   if (!term) {
     return void res
       .status(400)
       .json({ error: 'Empty search term is invalid.' });
   }
-  if (!id) {
-    return void res.status(400).json({ error: 'Search id is required.' });
-  }
   if (term.length < 2) {
     return void res.json([]);
   }
-  db.dictLookup(term).then((words: IWord[]) => res.json({ words, id }));
+  db.searchWord(term).then((lemmas: ILemma[]) => res.json({ lemmas, term }));
 }
 
 const router = express.Router();
@@ -44,6 +41,6 @@ router
   .get('/', getIndex)
   .get('/index/:publication', getChapters)
   .get('/article/:filename', getDocument)
-  .get('/dict', dictLookup);
+  .get('/lookup', searchWord);
 
 export default router;
