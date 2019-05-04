@@ -134,11 +134,21 @@ export function deleteDocument(filename: string) {
 
 export function searchWord(word: string) {
   const sql = [
-    'SELECT `lemmas`.*, `docs`.`title` FROM `words`',
+    'SELECT `lemmas`.*, `docs`.`filename` FROM `words`',
     'JOIN `lemmas` ON `words`.`lemma_id`=`lemmas`.`id`',
     'JOIN `docs` ON `lemmas`.`doc_id`=`docs`.`id`',
     'WHERE `word`=?',
     'ORDER BY `docs`.`filename`',
   ].join('\n');
   return queryPromise(sql, [word]);
+}
+
+export async function lookup(term: string) {
+  const sql = [
+    'SELECT DISTINCT word as text, lang FROM `words`',
+    'WHERE `word` LIKE ?',
+    'ORDER BY `word`',
+    'LIMIt 20',
+  ].join('\n');
+  return queryPromise(sql, [`${term}%`]);
 }

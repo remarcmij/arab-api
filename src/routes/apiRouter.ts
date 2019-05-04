@@ -22,6 +22,19 @@ function getDocument(req: Request, res: Response) {
   );
 }
 
+function lookup(req: Request, res: Response): void {
+  const { term } = req.query;
+  if (!term) {
+    return void res
+      .status(400)
+      .json({ error: 'Empty search term is invalid.' });
+  }
+  if (term.length === 0) {
+    return void res.json([]);
+  }
+  db.lookup(term).then((words: any[]) => res.json({ words, term }));
+}
+
 function searchWord(req: Request, res: Response): void {
   const { term } = req.query;
   if (!term) {
@@ -29,10 +42,7 @@ function searchWord(req: Request, res: Response): void {
       .status(400)
       .json({ error: 'Empty search term is invalid.' });
   }
-  if (term.length < 2) {
-    return void res.json([]);
-  }
-  db.searchWord(term).then((lemmas: ILemma[]) => res.json({ lemmas, term }));
+  db.searchWord(term).then((lemmas: ILemma[]) => res.json(lemmas));
 }
 
 const router = express.Router();
@@ -41,6 +51,7 @@ router
   .get('/', getIndex)
   .get('/index/:publication', getChapters)
   .get('/article/:filename', getDocument)
-  .get('/lookup', searchWord);
+  .get('/lookup', lookup)
+  .get('/search', searchWord);
 
 export default router;

@@ -1,4 +1,6 @@
 import { ILemma } from 'Types';
+import { IGNORE_NL } from './nl';
+import { IGNORE_AR } from './ar';
 
 export const removeParenthesizedFragments = (line: string) => {
   const regexp = /[()]/g;
@@ -58,13 +60,21 @@ export const stripTashkeel = (line: string) => line.replace(tashkeelRegExp, '');
 const removeBracketedText = (text: string) => text.replace(/\[.*]/g, '');
 const removeParentheses = (text: string) => text.replace(/[()]/g, '');
 
+const alefRegExp = /[\u0622\u0623\u0625\u0671]/;
+export const normalizeAlefs = (text: string) =>
+  text.replace(alefRegExp, '\u0627');
+
 export const extractLemmaWords = (lemma: ILemma) => {
-  const cleansedText = removeBracketedText(lemma.source);
+  const cleansedText = removeBracketedText(lemma.source.toLowerCase());
   const extractText =
     removeParenthesizedFragments(cleansedText) +
     ' ' +
     removeParentheses(cleansedText);
-  const source = [...new Set(extractRomanWords(extractText))];
-  const target = extractArabicWords(stripTashkeel(lemma.target));
+  const source = [...new Set(extractRomanWords(extractText))].filter(
+    word => !IGNORE_NL.includes(word),
+  );
+  const target = extractArabicWords(stripTashkeel(lemma.target))
+    .map(word => normalizeAlefs(word))
+    .filter(word => !IGNORE_AR.includes(word));
   return { source, target };
 };
