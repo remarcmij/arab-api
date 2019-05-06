@@ -1,10 +1,7 @@
 // @ts-check
 const {
   removeParenthesizedFragments,
-  extractRomanWords,
-  extractArabicWords,
   extractLemmaWords,
-  stripTashkeel,
 } = require('../dist/content/words-extractor');
 
 describe('removeParenthesizedFragments', () => {
@@ -22,42 +19,15 @@ describe('removeParenthesizedFragments', () => {
   });
 });
 
-describe('extractRomanWords', () => {
-  it('should extract roman words', () => {
-    const line = 'dat/voorwaar (na zeggen)';
-    const expected = ['dat', 'voorwaar', 'na', 'zeggen'];
-    const result = extractRomanWords(line);
-    expect(result).toEqual(expected);
-  });
-});
-
-describe('extractArabicWords', () => {
-  it('should extract arabic words', () => {
-    const line = 'إِلَى أَيْنَ؟';
-    const expected = ['إِلَى', 'أَيْنَ'];
-    const result = extractArabicWords(line);
-    expect(result).toEqual(expected);
-  });
-});
-
-describe('stripTashkeel', () => {
-  it('should strip tashkeel from Arabic text', () => {
-    const line = 'إِلَى أَيْنَ؟';
-    const expected = 'إلى أين؟';
-    const result = stripTashkeel(line);
-    expect(result).toBe(expected);
-  });
-});
-
 describe('extractLemmaWords', () => {
-  it('should extract lemma words with parentheses in source', () => {
+  it('should correctly extract lemma words', () => {
     const lemma = {
       source: 'dat/voorwaar (na)zeggen',
       target: 'إِلَى أَيْنَ؟',
     };
     const expected = {
       source: ['dat', 'voorwaar', 'zeggen', 'nazeggen'],
-      target: ['إلى', 'أين'],
+      target: ['إلى', 'أين', 'الى', 'اين'],
     };
     const result = extractLemmaWords(lemma);
     expect(result).toEqual(expected);

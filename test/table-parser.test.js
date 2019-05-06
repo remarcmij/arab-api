@@ -10,8 +10,18 @@ describe('table-parser', () => {
       'avond | مَسَاء | masāʾ',
     ].join('\n');
     const expected = [
-      { source: 'aarde', target: 'أَرْض', roman: 'ʾarḍ (v)' },
-      { source: 'avond', target: 'مَسَاء', roman: 'masāʾ' },
+      {
+        source: 'aarde',
+        target: 'أَرْض',
+        roman: 'ʾarḍ (v)',
+        words: { source: ['aarde'], target: ['أرض', 'ارض'] },
+      },
+      {
+        source: 'avond',
+        target: 'مَسَاء',
+        roman: 'masāʾ',
+        words: { source: ['avond'], target: ['مساء'] },
+      },
     ];
     const result = parseTable(sampleTable);
     expect(result).toEqual(expected);
