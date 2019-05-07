@@ -47,11 +47,11 @@ async function insertLemmas(
   docId: number,
   lemmas: ILemma[],
 ) {
-  const sql =
-    'INSERT INTO `lemmas` (`source`, `target`, `roman`, `doc_id`) VALUES (?,?,?,?)';
+  try {
+    const sql =
+      'INSERT INTO `lemmas` (`source`, `target`, `roman`, `doc_id`) VALUES (?,?,?,?)';
 
-  const insertIds = await Promise.all<number>(
-    lemmas.map(async ({ source, target, roman }) => {
+    const promises = lemmas.map(async ({ source, target, roman }) => {
       const { insertId } = await connectionQuery(sql, [
         source,
         target,
@@ -59,10 +59,19 @@ async function insertLemmas(
         docId,
       ]);
       return insertId;
-    }),
-  );
+    });
 
-  return insertWords(connectionQuery, lemmas, insertIds);
+    await promises
+      .reduce((promiseChain, currentTask) => {
+        return promiseChain.then(chainResults =>
+          currentTask.then(insertId => [...chainResults, insertId]),
+        );
+      }, Promise.resolve<number[]>([]))
+      .then(insertIds => insertWords(connectionQuery, lemmas, insertIds));
+  } catch (err) {
+    console.error(err);
+    throw err;
+  }
 }
 
 export async function insertDocument(doc: IMarkdownDocument | ILemmaDocument) {

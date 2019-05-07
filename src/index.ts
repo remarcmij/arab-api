@@ -44,9 +44,13 @@ const main = async () => {
     .get((req, res) => res.sendFile('index.html', { root: docRoot }));
 
   app.listen(PORT, async () => {
-    await content.refreshContent();
-    await content.watchContent();
-    logger.info(`server started at http://localhost:${PORT}`);
+    try {
+      await content.refreshContent();
+      await content.watchContent();
+      logger.info(`server started at http://localhost:${PORT}`);
+    } catch (err) {
+      console.error(err);
+    }
   });
 };
 
