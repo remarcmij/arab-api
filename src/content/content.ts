@@ -74,10 +74,10 @@ async function loadDocument(
   const doc: IFrontMatterDocument = fm<IAttributes>(docText);
   const attr = {
     ...doc.attributes,
-    filename: filenameBase,
-    sha,
-    publication,
     article,
+    filename: filenameBase,
+    publication,
+    sha,
   };
 
   if (article === 'index') {
@@ -106,8 +106,8 @@ async function loadDocument(
     case 'text':
       insertDoc = {
         ...attr,
-        kind: 'text',
         body: convertor.makeHtml(doc.body),
+        kind: 'text',
       };
       break;
     default:

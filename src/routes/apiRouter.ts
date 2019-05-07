@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
-import * as db from '../content/database';
 import { ILemma } from 'Types';
+import * as db from '../content/database';
 
 function getIndex(_: Request, res: Response) {
   db.getIndex().then((rows: any) => res.json(rows));

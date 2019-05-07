@@ -1,6 +1,6 @@
 import { ILemma } from 'Types';
-import { extractWords as extractSourceWords } from './lang/nl';
 import { extractWords as extractTargetWords } from './lang/ar';
+import { extractWords as extractSourceWords } from './lang/nl';
 
 export const removeParenthesizedFragments = (line: string) => {
   const regexp = /[()]/g;

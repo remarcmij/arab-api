@@ -1,12 +1,12 @@
 import { ILemma } from 'Types';
 import { extractLemmaWords } from './words-extractor';
 
-interface FieldDef {
+interface IFieldDef {
   name: keyof ILemma;
   required?: boolean;
 }
 
-const FIELD_DEFS: FieldDef[] = [
+const FIELD_DEFS: IFieldDef[] = [
   { name: 'source', required: true },
   { name: 'target', required: true },
   { name: 'roman' },
@@ -55,20 +55,20 @@ export function parseTable(body: string) {
   // Remaining lines contain the lemmas
   const lemmas = lines.slice(2).map(line => {
     const lemma = extractCells(line, fieldNames.length).reduce(
-      (lemma, cell, index) => {
+      (prev, cell, index) => {
         switch (fieldNames[index]) {
           case 'source':
-            lemma.source = cell;
+            prev.source = cell;
             break;
           case 'target':
-            lemma.target = cell;
+            prev.target = cell;
             break;
           case 'roman':
-            lemma.roman = cell;
+            prev.roman = cell;
             break;
           default:
         }
-        return lemma;
+        return prev;
       },
       {} as ILemma,
     );

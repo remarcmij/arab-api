@@ -1,12 +1,13 @@
+// tslint:disable-next-line: no-var-requires
 require('dotenv').load();
 import compression from 'compression';
 import cors from 'cors';
 import express from 'express';
 import morgan from 'morgan';
 import path from 'path';
+import * as content from './content/content';
 import apiRouter from './routes/apiRouter';
 import logger from './util/logger';
-import * as content from './content/content';
 
 const PORT = 8080; // default port to listen
 

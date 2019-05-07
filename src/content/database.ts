@@ -1,33 +1,34 @@
 import * as mysql from 'mysql';
-import util from 'util';
-import { stripTashkeel } from './tashkeel';
 import {
-  IDocument,
   IAttributes,
+  IDocument,
   ILemma,
   ILemmaDocument,
   IMarkdownDocument,
 } from 'Types';
+import util from 'util';
 
 const pool = mysql.createPool({
   connectionLimit: 10,
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
+  host: process.env.DB_HOST,
+  password: process.env.DB_PASSWORD,
+  user: process.env.DB_USER,
 });
 
-const queryPromise = util.promisify(pool.query.bind(pool));
+type IQueryFn = (sql: string, values?: any[]) => Promise<any>;
+
+const queryPromise = util.promisify<IQueryFn>(pool.query.bind(pool));
 const getConnectionPromise = util.promisify<mysql.PoolConnection>(
   pool.getConnection.bind(pool),
 );
 
 async function insertWords(
-  connectionQuery: Function,
+  connectionQuery: IQueryFn,
   lemmas: ILemma[],
   lemmaIds: number[],
 ) {
-  const values: [string, string, number][] = [];
+  const values: Array<[string, string, number]> = [];
   lemmas.forEach((lemma, index) => {
     const lemmaId = lemmaIds[index];
     lemma.words.source.forEach(sourceWord =>
@@ -43,15 +44,15 @@ async function insertWords(
 }
 
 async function insertLemmas(
-  connectionQuery: Function,
+  connectionQuery: IQueryFn,
   docId: number,
   lemmas: ILemma[],
 ) {
-  try {
-    const sql =
-      'INSERT INTO `lemmas` (`source`, `target`, `roman`, `doc_id`) VALUES (?,?,?,?)';
+  const sql =
+    'INSERT INTO `lemmas` (`source`, `target`, `roman`, `doc_id`) VALUES (?,?,?,?)';
 
-    const promises = lemmas.map(async ({ source, target, roman }) => {
+  const insertIds = await Promise.all<number>(
+    lemmas.map(async ({ source, target, roman }) => {
       const { insertId } = await connectionQuery(sql, [
         source,
         target,
@@ -59,19 +60,10 @@ async function insertLemmas(
         docId,
       ]);
       return insertId;
-    });
+    }),
+  );
 
-    await promises
-      .reduce((promiseChain, currentTask) => {
-        return promiseChain.then(chainResults =>
-          currentTask.then(insertId => [...chainResults, insertId]),
-        );
-      }, Promise.resolve<number[]>([]))
-      .then(insertIds => insertWords(connectionQuery, lemmas, insertIds));
-  } catch (err) {
-    console.error(err);
-    throw err;
-  }
+  return insertWords(connectionQuery, lemmas, insertIds);
 }
 
 export async function insertDocument(doc: IMarkdownDocument | ILemmaDocument) {
@@ -80,7 +72,9 @@ export async function insertDocument(doc: IMarkdownDocument | ILemmaDocument) {
     'VALUES (?,?,?,?,?,?,?,?)';
 
   const connection = await getConnectionPromise();
-  const connectionQuery = util.promisify(connection.query.bind(connection));
+  const connectionQuery = util.promisify<IQueryFn>(
+    connection.query.bind(connection),
+  );
 
   const { filename, sha, title, subtitle, prolog, epilog, kind, body } = doc;
   const { insertId: docId } = await connectionQuery(sql, [
