@@ -11,7 +11,7 @@ import {
   IMarkdownDocument,
 } from 'Types';
 import util from 'util';
-import logger from '../util/logger';
+import logger from '../config/logger';
 import * as db from './database';
 import { parseTable } from './table-parser';
 

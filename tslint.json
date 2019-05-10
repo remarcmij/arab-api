@@ -5,7 +5,8 @@
     "arrow-parens": false,
     "quotemark": [true, "single"],
     "semicolon": [true, "always"],
-    "no-console": false
+    "no-console": false,
+    "object-literal-sort-keys": false
   },
   "jsRules": {},
   "rulesDirectory": []

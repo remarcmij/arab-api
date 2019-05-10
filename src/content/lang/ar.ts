@@ -1,5 +1,7 @@
 import * as shared from './shared';
 
+// ref: https://en.wikipedia.org/wiki/Arabic_(Unicode_block)
+
 /* cSpell: disable */
 const IGNORED_WORDS = [
   'م', // vrouwelijk
