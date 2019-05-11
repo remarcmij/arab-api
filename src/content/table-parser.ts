@@ -1,5 +1,4 @@
-import { ILemma } from 'Types';
-import { extractLemmaWords } from './words-extractor';
+import { ILemma } from '../models/lemma-model';
 
 interface IFieldDef {
   name: keyof ILemma;
@@ -72,7 +71,6 @@ export function parseTable(body: string) {
       },
       {} as ILemma,
     );
-    lemma.words = extractLemmaWords(lemma);
     return lemma;
   });
 

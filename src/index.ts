@@ -35,8 +35,8 @@ const docRoot = path.resolve(__dirname, clientPath);
 
 mongoose.connect('mongodb://localhost/arab', { useNewUrlParser: true });
 const { connection } = mongoose;
-connection.on('error', err => console.error('Connection error:', err));
-connection.once('open', () => console.log('Connected to MongoDB'));
+connection.on('error', err => logger.error(`connection error: ${err.message}`));
+connection.once('open', () => logger.info('connected to MongoDB'));
 
 const main = async () => {
   const app = express();
@@ -55,12 +55,13 @@ const main = async () => {
     .get((req, res) => res.sendFile('index.html', { root: docRoot }));
 
   app.listen(PORT, async () => {
+    logger.info('---------------------------------------');
     try {
       await content.refreshContent();
       await content.watchContent();
       logger.info(`server started at http://localhost:${PORT}`);
     } catch (err) {
-      console.error(err);
+      logger.error(`error stating server: ${err.message}`);
     }
   });
 };

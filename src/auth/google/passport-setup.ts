@@ -43,7 +43,7 @@ passport.use(
             provider: 'google',
           };
           user = await new User(userInfo).save();
-          logger.info(`New Google user sign-in: ${user.email}`);
+          logger.info(`new Google user sign-in: ${user.email}`);
           await sendMail(user);
         } else {
           logger.debug(`Google user sign-in: ${user.email}`);

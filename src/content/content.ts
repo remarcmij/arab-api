@@ -4,21 +4,51 @@ import fs from 'fs';
 import _glob from 'glob';
 import path from 'path';
 import showdown from 'showdown';
-import {
-  IAttributes,
-  IIndexDocument,
-  ILemmaDocument,
-  IMarkdownDocument,
-} from 'Types';
 import util from 'util';
 import logger from '../config/logger';
-import * as db from './database';
+import { ILemma } from '../models/lemma-model';
+import * as db from './db';
 import { parseTable } from './table-parser';
 
 const glob = util.promisify(_glob);
 const fsAccess = util.promisify(fs.access);
 
-export interface IFrontMatterDocument {
+export interface IWords {
+  source: string[];
+  target: string[];
+}
+
+export interface IAttributes {
+  id?: number;
+  publication?: string;
+  article?: string;
+  filename?: string;
+  sha?: string;
+  title: string;
+  subtitle?: string;
+  prolog?: string;
+  epilog?: string;
+  kind: string;
+  body?: string;
+}
+
+export interface IIndexFile extends IAttributes {
+  kind: 'index';
+}
+
+export interface IMarkdownFile extends IAttributes {
+  kind: 'text';
+  body: string;
+}
+
+export interface ILemmaFile extends IAttributes {
+  kind: 'lemmas';
+  lemmas: ILemma[];
+}
+
+export type IContentFile = IIndexFile | IMarkdownFile | ILemmaFile;
+
+export interface IFrontMatterFile {
   attributes: IAttributes;
   body: string;
 }
@@ -52,7 +82,7 @@ function computeSha(data: string) {
 
 async function loadDocument(
   filename: string,
-): Promise<IIndexDocument | ILemmaDocument | IMarkdownDocument> {
+): Promise<IIndexFile | ILemmaFile | IMarkdownFile> {
   const filePath = path.join(contentDir, filename);
   const [, publication, article] = parseFilename(filename);
   const filenameBase = `${publication}.${article}`;
@@ -63,7 +93,7 @@ async function loadDocument(
   const docSha = await db.getDocumentSha(filenameBase);
 
   if (sha === docSha) {
-    console.log(`unchanged: ${filename}`);
+    logger.info(`unchanged: ${filename}`);
     return;
   }
 
@@ -71,7 +101,7 @@ async function loadDocument(
 
   await db.deleteDocument(filenameBase);
 
-  const doc: IFrontMatterDocument = fm<IAttributes>(docText);
+  const doc: IFrontMatterFile = fm<IAttributes>(docText);
   const attr = {
     ...doc.attributes,
     article,
@@ -111,7 +141,7 @@ async function loadDocument(
       };
       break;
     default:
-      console.log(`Ignoring document kind: '${attr.kind}'`);
+      logger.error(`ignoring unknown document kind: '${attr.kind}'`);
       return;
   }
 

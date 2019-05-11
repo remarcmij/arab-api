@@ -3,17 +3,6 @@ import mongoose, { Document, Schema } from 'mongoose';
 export type Role = 'guest' | 'user' | 'admin';
 export type Provider = 'local' | 'google' | 'facebook';
 
-const userSchema = new Schema({
-  name: String,
-  email: String,
-  photo: String,
-  role: String,
-  hashedPassword: String,
-  provider: String,
-  created: { type: Date, default: Date.now },
-  lastAccess: { type: Date, default: Date.now },
-});
-
 export interface IUser {
   name: string;
   email: string;
@@ -24,6 +13,16 @@ export interface IUser {
   created?: Date;
   lastAccess?: Date;
 }
+const userSchema = new Schema<IUser>({
+  name: String,
+  email: String,
+  photo: String,
+  role: String,
+  hashedPassword: String,
+  provider: String,
+  created: { type: Date, default: Date.now },
+  lastAccess: { type: Date, default: Date.now },
+});
 
 export interface IUserDocument extends Document, IUser {}
 

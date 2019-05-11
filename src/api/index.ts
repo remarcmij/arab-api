@@ -1,8 +1,8 @@
 import express, { Request, Response } from 'express';
-import { ILemma } from 'Types';
 import { hasRole, isAuthenticated } from '../auth/auth-service';
 import logger from '../config/logger';
-import * as db from '../content/database';
+import * as db from '../content/db';
+import { ILemma } from '../models/lemma-model';
 import { User } from '../models/user-model';
 
 const getIndex = (req: Request, res: Response) => {
@@ -35,7 +35,9 @@ const lookup = (req: Request, res: Response): void => {
   if (term.length === 0) {
     return void res.json([]);
   }
-  db.lookup(term).then((words: any[]) => res.json({ words, term }));
+  db.lookup(term)
+    .then((words: any[]) => res.json({ words, term }))
+    .catch(err => res.status(500).json({ error: err.message }));
 };
 
 const searchWord = (req: Request, res: Response): void => {
@@ -45,18 +47,24 @@ const searchWord = (req: Request, res: Response): void => {
       .status(400)
       .json({ error: 'Empty search term is invalid.' });
   }
-  db.searchWord(term).then((lemmas: ILemma[]) => res.json(lemmas));
+  db.searchWord(term)
+    .then((lemmas: ILemma[]) => res.json(lemmas))
+    .catch(err => res.status(500).json({ error: err.message }));
 };
 
 const getProfile = async (req: Request, res: Response) => {
-  const user = await User.findOne({ email: req.user.email });
-  if (!user) {
-    return res.sendStatus(401);
+  try {
+    const user = await User.findOne({ email: req.user.email });
+    if (!user) {
+      return res.sendStatus(401);
+    }
+    user.lastAccess = new Date();
+    await user.save();
+    logger.info(`user ${user.email} (${user.role}) signed in`);
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-  user.lastAccess = new Date();
-  await user.save();
-  logger.info(`User ${user.email} (${user.role}) signed in`);
-  res.json(user);
 };
 
 const hasUserOrAdminRole = hasRole(['user', 'admin']);
