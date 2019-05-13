@@ -3,7 +3,6 @@ import fm from 'front-matter';
 import fs from 'fs';
 import _glob from 'glob';
 import path from 'path';
-import showdown from 'showdown';
 import util from 'util';
 import logger from '../config/logger';
 import { ILemma } from '../models/lemma-model';
@@ -62,16 +61,6 @@ const contentDir = path.join(
     : '../../../arab-content/content',
 );
 
-const convertor = new showdown.Converter({
-  emoji: true,
-  openLinksInNewWindow: true,
-  simplifiedAutoLink: true,
-  strikethrough: true,
-  tables: true,
-});
-
-const stripParaTag = (text: string) => text.slice(3, -4);
-
 const parseFilename = (filename: string) => filename.match(/^(.+)\.(.+)\.md$/);
 
 function computeSha(data: string) {
@@ -113,15 +102,6 @@ async function loadDocument(
   if (article === 'index') {
     attr.kind = 'index';
   }
-  if (attr.subtitle) {
-    attr.subtitle = stripParaTag(convertor.makeHtml(attr.subtitle));
-  }
-  if (attr.prolog) {
-    attr.prolog = convertor.makeHtml(attr.prolog);
-  }
-  if (attr.epilog) {
-    attr.epilog = convertor.makeHtml(attr.epilog);
-  }
 
   let insertDoc: any;
 
@@ -136,7 +116,7 @@ async function loadDocument(
     case 'text':
       insertDoc = {
         ...attr,
-        body: convertor.makeHtml(doc.body),
+        body: doc.body,
         kind: 'text',
       };
       break;

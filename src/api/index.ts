@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { hasRole, isAuthenticated } from '../auth/auth-service';
+import { isAuthenticated, isAuthorized } from '../auth/auth-service';
 import logger from '../config/logger';
 import * as db from '../content/db';
 import { ILemma } from '../models/lemma-model';
@@ -67,17 +67,14 @@ const getProfile = async (req: Request, res: Response) => {
   }
 };
 
-const hasUserOrAdminRole = hasRole(['user', 'admin']);
-const hasAdminRole = hasRole('admin');
-
 const router = express.Router();
 
 router
   .get('/', isAuthenticated, getIndex)
   .get('/profile', isAuthenticated, getProfile)
-  .get('/index/:publication', hasUserOrAdminRole, getChapters)
-  .get('/article/:filename', hasUserOrAdminRole, getDocument)
-  .get('/lookup', lookup) // non-sensitive: trade protection for speed
-  .get('/search', hasUserOrAdminRole, searchWord);
+  .get('/index/:publication', isAuthorized, getChapters)
+  .get('/article/:filename', isAuthorized, getDocument)
+  .get('/search', isAuthorized, searchWord)
+  .get('/lookup', lookup); // non-sensitive: trade protection for speed
 
 export default router;

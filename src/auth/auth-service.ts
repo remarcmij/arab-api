@@ -1,4 +1,3 @@
-import { ResponseError } from '@sendgrid/helpers/classes';
 import sgMail from '@sendgrid/mail';
 import express, { NextFunction, Request, Response } from 'express';
 import expressJwt from 'express-jwt';
@@ -28,13 +27,11 @@ export const isAuthenticated = (() => {
 })();
 
 export const hasRole = (role: string | string[]) => {
+  const roles = Array.isArray(role) ? role : [role];
   const router = express.Router();
   router.use(isAuthenticated);
   router.use((req: Request, res: Response, next: NextFunction) => {
-    const success = Array.isArray(role)
-      ? role.includes(req.user.role)
-      : req.user.role === role;
-    if (success) {
+    if (roles.includes(req.user.role)) {
       next();
     } else {
       res.sendStatus(403);
@@ -42,6 +39,9 @@ export const hasRole = (role: string | string[]) => {
   });
   return router;
 };
+
+export const isAuthorized = hasRole(['user', 'admin']);
+export const isAdmin = hasRole('admin');
 
 const signToken = (id: string): string =>
   jwt.sign({ id }, process.env.JWT_SECRET, {
