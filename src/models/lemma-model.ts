@@ -1,17 +1,20 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface ILemma {
-  source: string;
-  target: string;
-  roman?: string;
+  nl: string;
+  ar: string;
+  rom?: string;
   filename: string;
+  sectionNum: number;
   _topicId?: Schema.Types.ObjectId;
 }
+
 const lemmaSchema = new Schema<ILemma>({
-  source: String,
-  target: String,
-  roman: String,
+  nl: String,
+  ar: String,
+  rom: String,
   filename: String,
+  sectionNum: Number,
   _topicId: Schema.Types.ObjectId,
 });
 

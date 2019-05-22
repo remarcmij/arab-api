@@ -1,14 +1,14 @@
 declare module 'Types' {
   export interface IWords {
-    source: string[];
-    target: string[];
+    nl: string[];
+    ar: string[];
   }
 
   export interface ILemma {
-    source: string;
-    target: string;
+    nl: string;
+    ar: string;
     words: IWords;
-    roman?: string;
+    rom?: string;
     notes?: string;
   }
 

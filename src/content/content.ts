@@ -7,14 +7,14 @@ import util from 'util';
 import logger from '../config/logger';
 import { ILemma } from '../models/lemma-model';
 import * as db from './db';
-import { parseTable } from './table-parser';
+import { parseBody } from './parser';
 
 const glob = util.promisify(_glob);
 const fsAccess = util.promisify(fs.access);
 
 export interface IWords {
-  source: string[];
-  target: string[];
+  nl: string[];
+  ar: string[];
 }
 
 export interface IAttributes {
@@ -25,19 +25,12 @@ export interface IAttributes {
   sha?: string;
   title: string;
   subtitle?: string;
-  prolog?: string;
-  epilog?: string;
   kind: string;
-  body?: string;
+  sections?: string[];
 }
 
 export interface IIndexFile extends IAttributes {
   kind: 'index';
-}
-
-export interface IMarkdownFile extends IAttributes {
-  kind: 'text';
-  body: string;
 }
 
 export interface ILemmaFile extends IAttributes {
@@ -45,7 +38,7 @@ export interface ILemmaFile extends IAttributes {
   lemmas: ILemma[];
 }
 
-export type IContentFile = IIndexFile | IMarkdownFile | ILemmaFile;
+// export type IContentFile = IIndexFile | IMarkdownFile | ILemmaFile;
 
 export interface IFrontMatterFile {
   attributes: IAttributes;
@@ -69,9 +62,7 @@ function computeSha(data: string) {
   return shaSum.digest('hex');
 }
 
-async function loadDocument(
-  filename: string,
-): Promise<IIndexFile | ILemmaFile | IMarkdownFile> {
+async function loadDocument(filename: string): Promise<any> {
   const filePath = path.join(contentDir, filename);
   const [, publication, article] = parseFilename(filename);
   const filenameBase = `${publication}.${article}`;
@@ -109,20 +100,20 @@ async function loadDocument(
     case 'index':
       insertDoc = { ...attr, kind: 'index' };
       break;
-    case 'lemmas':
-      const lemmas = parseTable(doc.body);
-      insertDoc = { ...attr, kind: 'lemmas', lemmas };
-      break;
-    case 'text':
-      insertDoc = {
-        ...attr,
-        body: doc.body,
-        kind: 'text',
-      };
-      break;
+    // case 'lemmas':
+    //   const lemmas = parseTable(doc.body);
+    //   insertDoc = { ...attr, kind: 'lemmas', lemmas };
+    //   break;
+    // case 'text':
+    //   insertDoc = {
+    //     ...attr,
+    //     body: doc.body,
+    //     kind: 'text',
+    //   };
+    //   break;
     default:
-      logger.error(`ignoring unknown document kind: '${attr.kind}'`);
-      return;
+      const { sections, lemmas } = parseBody(doc.body);
+      insertDoc = { ...attr, kind: 'lemmas', lemmas, sections };
   }
 
   db.insertDocument(insertDoc);

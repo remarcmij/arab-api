@@ -48,7 +48,7 @@ const searchWord = (req: Request, res: Response): void => {
       .json({ error: 'Empty search term is invalid.' });
   }
   db.searchWord(term)
-    .then((lemmas: ILemma[]) => res.json(lemmas))
+    .then((lemmas: any[]) => res.json(lemmas))
     .catch(err => res.status(500).json({ error: err.message }));
 };
 

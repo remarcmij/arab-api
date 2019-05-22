@@ -40,12 +40,12 @@ const removeBracketedText = (text: string) => text.replace(/\[.*]/g, '');
 const removeParentheses = (text: string) => text.replace(/[()]/g, '');
 
 export const extractLemmaWords = (lemma: ILemma) => {
-  const cleansedText = removeBracketedText(lemma.source);
+  const cleansedText = removeBracketedText(lemma.nl);
   const extractText =
     removeParenthesizedFragments(cleansedText) +
     ' ' +
     removeParentheses(cleansedText);
-  const source = extractSourceWords(extractText);
-  const target = extractTargetWords(lemma.target);
-  return { source, target };
+  const nl = extractSourceWords(extractText);
+  const ar = extractTargetWords(lemma.ar);
+  return { nl, ar };
 };

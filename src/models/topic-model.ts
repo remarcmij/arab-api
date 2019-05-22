@@ -7,10 +7,8 @@ export interface ITopic {
   sha: string;
   title: string;
   subtitle: string;
-  prolog?: string;
-  epilog?: string;
   kind: string;
-  body?: string;
+  sections: string[];
 }
 
 const topicSchema = new Schema<ITopic>({
@@ -20,10 +18,8 @@ const topicSchema = new Schema<ITopic>({
   sha: String,
   title: String,
   subtitle: String,
-  prolog: String,
-  epilog: String,
   kind: String,
-  body: String,
+  sections: [String],
 });
 
 export interface ITopicDocument extends ITopic, Document {}

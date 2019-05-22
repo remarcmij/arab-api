@@ -15,7 +15,7 @@ const wordSchema = new Schema<IWord>({
   filename: String,
   order: Number,
   _lemmaId: { type: Schema.Types.ObjectId, ref: 'Lemma' },
-  _topicId: Schema.Types.ObjectId,
+  _topicId: { type: Schema.Types.ObjectId, ref: 'Topic' },
 });
 
 export interface IWordDocument extends Document, IWord {}

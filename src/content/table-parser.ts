@@ -6,9 +6,9 @@ interface IFieldDef {
 }
 
 const FIELD_DEFS: IFieldDef[] = [
-  { name: 'source', required: true },
-  { name: 'target', required: true },
-  { name: 'roman' },
+  { name: 'nl', required: true },
+  { name: 'ar', required: true },
+  { name: 'rom' },
 ];
 
 const extractCells = (line: string, expectedCount?: number) => {
@@ -56,14 +56,14 @@ export function parseTable(body: string) {
     const lemma = extractCells(line, fieldNames.length).reduce(
       (prev, cell, index) => {
         switch (fieldNames[index]) {
-          case 'source':
-            prev.source = cell;
+          case 'nl':
+            prev.nl = cell;
             break;
-          case 'target':
-            prev.target = cell;
+          case 'ar':
+            prev.ar = cell;
             break;
-          case 'roman':
-            prev.roman = cell;
+          case 'rom':
+            prev.rom = cell;
             break;
           default:
         }
