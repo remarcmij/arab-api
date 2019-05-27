@@ -3,14 +3,14 @@ require('dotenv').load();
 import compression from 'compression';
 import cors from 'cors';
 import express from 'express';
-import mongoose from 'mongoose';
 import morgan from 'morgan';
 import passport from 'passport';
 import path from 'path';
 import apiRouter from './api';
+import * as content from './api/content';
 import authRouter from './auth';
+import connectDB from './config/db';
 import logger from './config/logger';
-import * as content from './content/content';
 
 const PORT = 8080; // default port to listen
 
@@ -33,12 +33,8 @@ const clientPath =
 
 const docRoot = path.resolve(__dirname, clientPath);
 
-mongoose.connect('mongodb://localhost/arab', { useNewUrlParser: true });
-const { connection } = mongoose;
-connection.on('error', err => logger.error(`connection error: ${err.message}`));
-connection.once('open', () => logger.info('connected to MongoDB'));
-
 const main = async () => {
+  await connectDB();
   const app = express();
   app.use(cors());
   app.use(compression());

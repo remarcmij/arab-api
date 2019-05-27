@@ -1,8 +1,8 @@
 import mongoose from 'mongoose';
-import AutoComplete from './models/auto-complete-model';
-import Lemma from './models/lemma-model';
-import Topic from './models/topic-model';
-import Word from './models/word-model';
+import AutoComplete from './models/AutoComplete';
+import Lemma from './models/Lemma';
+import Topic from './models/Topic';
+import Word from './models/Word';
 
 mongoose.connect('mongodb://localhost/arab', { useNewUrlParser: true });
 const { connection } = mongoose;

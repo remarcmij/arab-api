@@ -5,7 +5,6 @@ import _glob from 'glob';
 import path from 'path';
 import util from 'util';
 import logger from '../config/logger';
-import { ILemma } from '../models/lemma-model';
 import * as db from './db';
 import { parseBody } from './parser';
 
@@ -25,20 +24,9 @@ export interface IAttributes {
   sha?: string;
   title: string;
   subtitle?: string;
-  kind: string;
+  restricted: boolean;
   sections?: string[];
 }
-
-export interface IIndexFile extends IAttributes {
-  kind: 'index';
-}
-
-export interface ILemmaFile extends IAttributes {
-  kind: 'lemmas';
-  lemmas: ILemma[];
-}
-
-// export type IContentFile = IIndexFile | IMarkdownFile | ILemmaFile;
 
 export interface IFrontMatterFile {
   attributes: IAttributes;
@@ -70,7 +58,7 @@ async function loadDocument(filename: string): Promise<any> {
   const docText = await readFile(filePath, 'utf8');
 
   const sha = computeSha(docText);
-  const docSha = await db.getDocumentSha(filenameBase);
+  const docSha = await db.getTopicSha(filenameBase);
 
   if (sha === docSha) {
     logger.info(`unchanged: ${filename}`);
@@ -79,9 +67,10 @@ async function loadDocument(filename: string): Promise<any> {
 
   logger.debug(`loading: ${filename}`);
 
-  await db.deleteDocument(filenameBase);
+  await db.deleteTopic(filenameBase);
 
   const doc: IFrontMatterFile = fm<IAttributes>(docText);
+
   const attr = {
     ...doc.attributes,
     article,
@@ -90,33 +79,16 @@ async function loadDocument(filename: string): Promise<any> {
     sha,
   };
 
-  if (article === 'index') {
-    attr.kind = 'index';
-  }
-
   let insertDoc: any;
 
-  switch (attr.kind) {
-    case 'index':
-      insertDoc = { ...attr, kind: 'index' };
-      break;
-    // case 'lemmas':
-    //   const lemmas = parseTable(doc.body);
-    //   insertDoc = { ...attr, kind: 'lemmas', lemmas };
-    //   break;
-    // case 'text':
-    //   insertDoc = {
-    //     ...attr,
-    //     body: doc.body,
-    //     kind: 'text',
-    //   };
-    //   break;
-    default:
-      const { sections, lemmas } = parseBody(doc.body);
-      insertDoc = { ...attr, kind: 'lemmas', lemmas, sections };
+  if (article === 'index') {
+    insertDoc = { ...attr };
+  } else {
+    const { sections, lemmas } = parseBody(doc.body);
+    insertDoc = { ...attr, lemmas, sections };
   }
 
-  db.insertDocument(insertDoc);
+  db.insertTopic(insertDoc);
 }
 
 export async function refreshContent() {
@@ -140,7 +112,7 @@ export async function watchContent() {
           case 'rename': {
             await fsAccess(filePath).then(
               () => loadDocument(filename),
-              () => db.deleteDocument(filename),
+              () => db.deleteTopic(filename),
             );
             break;
           }

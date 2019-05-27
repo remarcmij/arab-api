@@ -22,23 +22,6 @@ declare module 'Types' {
     subtitle?: string;
     prolog?: string;
     epilog?: string;
-    kind: string;
     body?: string;
   }
-
-  export interface IIndexDocument extends IAttributes {
-    kind: 'index';
-  }
-
-  export interface IMarkdownDocument extends IAttributes {
-    kind: 'text';
-    body: string;
-  }
-
-  export interface ILemmaDocument extends IAttributes {
-    kind: 'lemmas';
-    lemmas: ILemma[];
-  }
-
-  export type IDocument = IIndexDocument | IMarkdownDocument | ILemmaDocument;
 }

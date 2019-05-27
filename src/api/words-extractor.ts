@@ -1,4 +1,4 @@
-import { ILemma } from '../models/lemma-model';
+import { ILemma } from '../models/Lemma';
 import { extractWords as extractTargetWords } from './lang/ar';
 import { extractWords as extractSourceWords } from './lang/nl';
 

@@ -1,4 +1,4 @@
-import { ILemma } from '../models/lemma-model';
+import { ILemma } from '../models/Lemma';
 
 interface IFieldDef {
   name: keyof ILemma;

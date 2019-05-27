@@ -1,11 +1,10 @@
 import debounce from 'lodash.debounce';
 import { Schema } from 'mongoose';
 import logger from '../config/logger';
-import AutoComplete from '../models/auto-complete-model';
-import Lemma, { ILemma } from '../models/lemma-model';
-import Topic, { ITopicDocument } from '../models/topic-model';
-import Word from '../models/word-model';
-// import { ILemmaFile, IMarkdownFile } from './content';
+import AutoComplete from '../models/AutoComplete';
+import Lemma, { ILemma } from '../models/Lemma';
+import Topic, { ITopicDocument } from '../models/Topic';
+import Word from '../models/Word';
 import { extractLemmaWords } from './words-extractor';
 
 const REBUILD_DELAY = 2000;
@@ -72,21 +71,21 @@ async function insertLemmas(topicDoc: ITopicDocument, lemmas: ILemma[]) {
   await insertWords(lemmas, insertedIds, topicDoc);
 }
 
-export async function insertDocument(doc: any) {
-  const { filename, sha, title, subtitle, kind, sections, lemmas } = doc;
-  const [publication, chapter] = filename.split('.');
+export async function insertTopic(doc: any) {
+  const { filename, sha, title, subtitle, restricted, sections, lemmas } = doc;
+  const [publication, article] = filename.split('.');
   const topicDoc = await new Topic({
     filename,
     publication,
-    chapter,
+    article,
     sha,
     title,
     subtitle,
-    kind,
+    restricted,
     sections,
   }).save();
 
-  if (doc.kind === 'lemmas') {
+  if (article !== 'index') {
     await insertLemmas(topicDoc, lemmas);
     await debouncedRebuildAutoCompleteCollection();
   }
@@ -121,11 +120,11 @@ async function rebuildAutoCompleteCollection() {
   }
 }
 
-export function getDocumentSha(filename: string) {
+export function getTopicSha(filename: string) {
   return Topic.findOne({ filename }).then(doc => (doc ? doc.sha : null));
 }
 
-export async function deleteDocument(filename: string) {
+export async function deleteTopic(filename: string) {
   const topic = await Topic.findOne({ filename });
   if (topic) {
     await Promise.all([
@@ -136,30 +135,34 @@ export async function deleteDocument(filename: string) {
   }
 }
 
-export function getIndex() {
-  return Topic.find({ chapter: 'index' }).sort('title');
+export function getIndexTopics() {
+  return Topic.find({ article: 'index' }).sort('title');
 }
 
-export function getChapters(publication: string) {
-  return Topic.find({ publication }).sort('title');
+export function getArticleTopics(publication: string) {
+  return Topic.find({ publication })
+    .select('-sections')
+    .sort('article');
 }
 
-export async function getDocument(filename: string) {
+export async function getArticle(filename: string) {
   const topic = await Topic.findOne({ filename }).lean();
   topic.lemmas = await Lemma.find({ _topicId: topic._id });
   return topic;
 }
 
-export async function searchWord(word: string) {
+export async function searchWord(word: string, isAuthorized: boolean) {
   const results = await Word.find({ word })
     .sort('filename order')
     .populate('_lemmaId _topicId')
     .lean();
 
-  return results.map((result: any) => ({
-    ...result._lemmaId,
-    title: result._topicId.title,
-  }));
+  return results
+    .filter((result: any) => isAuthorized || !result._topicId.restricted)
+    .map((result: any) => ({
+      ...result._lemmaId,
+      title: result._topicId.title,
+    }));
 }
 
 export function lookup(term: string) {

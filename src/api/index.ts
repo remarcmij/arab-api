@@ -1,80 +1,120 @@
 import express, { Request, Response } from 'express';
-import { isAuthenticated, isAuthorized } from '../auth/auth-service';
+import { param, query, validationResult } from 'express-validator/check';
+import { authCheck } from '../auth/auth-service';
+import '../auth/local/passport-setup';
 import logger from '../config/logger';
-import * as db from '../content/db';
-import { ILemma } from '../models/lemma-model';
-import { User } from '../models/user-model';
+import { ITopic } from '../models/Topic';
+import { isAuthorizedUser, User } from '../models/User';
+import * as db from './db';
 
-const getIndex = (req: Request, res: Response) => {
-  db.getIndex().then((rows: any) => res.json(rows));
-};
+const router = express.Router();
 
-const getChapters = (req: Request, res: Response) => {
-  db.getChapters(req.params.publication).then((rows: any) => res.json(rows));
-};
-
-const getDocument = (req: Request, res: Response) => {
-  const { filename } = req.params;
-  db.getDocument(filename).then(
-    (doc: any): void => {
-      if (!doc) {
-        return void res.sendStatus(404);
-      }
-      res.json(doc);
-    },
-  );
-};
-
-const lookup = (req: Request, res: Response): void => {
-  const { term } = req.query;
-  if (!term) {
-    return void res
-      .status(400)
-      .json({ error: 'Empty search term is invalid.' });
+const hasRequestErrors = (req: Request, res: Response): boolean => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    res.status(400).json({ errors: errors.array() });
+    return true;
   }
-  if (term.length === 0) {
-    return void res.json([]);
-  }
-  db.lookup(term)
-    .then((words: any[]) => res.json({ words, term }))
-    .catch(err => res.status(500).json({ error: err.message }));
+  return false;
 };
 
-const searchWord = (req: Request, res: Response): void => {
-  const { term } = req.query;
-  if (!term) {
-    return void res
-      .status(400)
-      .json({ error: 'Empty search term is invalid.' });
-  }
-  db.searchWord(term)
-    .then((lemmas: any[]) => res.json(lemmas))
-    .catch(err => res.status(500).json({ error: err.message }));
-};
+router.get('/', authCheck, (req: Request, res: Response) => {
+  const isAuthorized = isAuthorizedUser(req.user);
+  db.getIndexTopics()
+    .then(topics => topics.filter(topic => !topic.restricted || isAuthorized))
+    .then(topics => res.json(topics));
+});
 
-const getProfile = async (req: Request, res: Response) => {
+router.get('/profile', authCheck, async (req: Request, res: Response) => {
   try {
-    const user = await User.findOne({ email: req.user.email });
+    const user = await User.findOne({ email: req.user.email }).select(
+      '-hashedPassword',
+    );
     if (!user) {
       return res.sendStatus(401);
     }
     user.lastAccess = new Date();
     await user.save();
-    logger.info(`user ${user.email} (${user.role}) signed in`);
+    logger.info(`user ${user.email} (${user.status}) signed in`);
     res.json(user);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-};
+});
 
-const router = express.Router();
+router.get(
+  '/index/:publication',
+  authCheck,
+  param('publication', 'publication is required')
+    .not()
+    .isEmpty(),
+  (req: Request, res: Response) => {
+    if (hasRequestErrors(req, res)) {
+      return;
+    }
+    const isAuthorized = isAuthorizedUser(req.user);
+    db.getArticleTopics(req.params.publication)
+      .then(topics => topics.filter(topic => !topic.restricted || isAuthorized))
+      .then(topics => res.json(topics));
+  },
+);
 
-router
-  .get('/', isAuthenticated, getIndex)
-  .get('/profile', isAuthenticated, getProfile)
-  .get('/index/:publication', isAuthorized, getChapters)
-  .get('/article/:filename', isAuthorized, getDocument)
-  .get('/search', isAuthorized, searchWord)
-  .get('/lookup', lookup); // non-sensitive: trade protection for speed
+router.get(
+  '/article/:filename',
+  authCheck,
+  param('filename', 'filename is required')
+    .not()
+    .isEmpty(),
+  (req: Request, res: Response) => {
+    if (hasRequestErrors(req, res)) {
+      return;
+    }
+    const { filename } = req.params;
+    db.getArticle(filename).then(
+      (topic: ITopic): void => {
+        if (!topic) {
+          return void res.sendStatus(404);
+        }
+        if (topic.restricted && !isAuthorizedUser(req.user)) {
+          return void res.sendStatus(401);
+        }
+        res.json(topic);
+      },
+    );
+  },
+);
+
+router.get(
+  '/search',
+  authCheck,
+  query('term', 'term is required')
+    .not()
+    .isEmpty(),
+  (req: Request, res: Response): void => {
+    if (hasRequestErrors(req, res)) {
+      return;
+    }
+    const { term } = req.query;
+    db.searchWord(term, isAuthorizedUser(req.user))
+      .then((lemmas: any[]) => res.json(lemmas))
+      .catch(err => res.status(500).json({ error: err.message }));
+  },
+);
+
+router.get(
+  '/lookup',
+  query('term', 'term is required')
+    .not()
+    .isEmpty(),
+  (req: Request, res: Response) => {
+    if (hasRequestErrors(req, res)) {
+      return;
+    }
+    const { term } = req.query;
+    db.lookup(term)
+      .then((words: any[]) => res.json({ words, term }))
+      .catch(err => res.status(500).json({ error: err.message }));
+  },
+);
 
 export default router;

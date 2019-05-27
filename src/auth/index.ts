@@ -1,17 +1,12 @@
-import express, { Request, Response } from 'express';
+import express, { NextFunction, Request, Response } from 'express';
+import { body, validationResult } from 'express-validator/check';
 import passport from 'passport';
-import { setTokenCookie } from './auth-service';
+import logger from '../config/logger';
+import { encryptPassword, User } from '../models/User';
+import { sendToken, setTokenCookie } from './auth-service';
 import './google/passport-setup';
 
 const router = express.Router();
-
-const loginGoogle = (req: Request, res: Response) => {
-  res.send('Logging in with google');
-};
-
-const logout = (req: Request, res: Response) => {
-  res.send('Logging out');
-};
 
 router
   .get(
@@ -32,5 +27,68 @@ router
       },
     ),
   );
+
+router.post(
+  '/login',
+  body('email', 'The email address is invalid').isEmail(),
+  body('password', 'Password is required').exists(),
+  (req, res, next) => {
+    passport.authenticate('local', (err, user, info) => {
+      const error = err || info;
+      if (error) {
+        return void res.status(401).json(error);
+      }
+      if (!user) {
+        return void res.status(401).json({
+          message: 'Something went wrong, please try again.',
+        });
+      }
+      req.user = user;
+      next();
+    })(req, res, next);
+  },
+  sendToken,
+);
+
+router.post(
+  '/signup',
+  [
+    body('name', 'Name is required')
+      .not()
+      .isEmpty(),
+    body('email', 'The email address is invalid').isEmail(),
+    body(
+      'password',
+      'Please enter a password of 8 characters or more',
+    ).isLength({
+      min: 8,
+    }),
+  ],
+  async (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    const { name, email, password } = req.body;
+    let user = await User.findOne({ email });
+
+    if (user) {
+      return res.status(400).json({ message: 'User already exists' });
+    }
+
+    const hashedPassword = await encryptPassword(password);
+    user = await User.create({
+      provider: 'local',
+      status: 'registered',
+      name,
+      email,
+      hashedPassword,
+    });
+    req.user = user;
+    logger.info(`created account for ${email}`);
+    next();
+  },
+  sendToken,
+);
 
 export default router;

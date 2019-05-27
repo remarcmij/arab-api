@@ -1,7 +1,7 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import logger from '../../config/logger';
-import { IUser, IUserDocument, User } from '../../models/user-model';
+import { IUser, IUserDocument, User } from '../../models/User';
 import { sendMail } from '../auth-service';
 
 interface IGoogleProfile {
@@ -38,9 +38,10 @@ passport.use(
           const userInfo: IUser = {
             email,
             name: displayName,
-            role: 'guest',
+            status: 'registered',
             photo,
             provider: 'google',
+            verified: true,
           };
           user = await new User(userInfo).save();
           logger.info(`new Google user sign-in: ${user.email}`);
