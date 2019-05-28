@@ -1,0 +1,3 @@
+[submodule "arab-client"]
+	path = arab-client
+	url = git@github.com:remarcmij/arab-client.git
