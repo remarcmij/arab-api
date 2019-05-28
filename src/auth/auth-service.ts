@@ -1,5 +1,6 @@
 import sgMail from '@sendgrid/mail';
-import express, { NextFunction, Request, Response } from 'express';
+import { compose } from 'compose-middleware';
+import { NextFunction, Request, Response } from 'express';
 import expressJwt from 'express-jwt';
 import jwt from 'jsonwebtoken';
 import { IUserDocument, User } from '../models/User';
@@ -8,13 +9,17 @@ const EXPIRES_IN_SECONDS = 30 * 24 * 60 * 60; // days * hours/day * minutes/hour
 
 const validateJwt = expressJwt({
   secret: process.env.JWT_SECRET,
+  credentialsRequired: true,
+});
+
+const validateOptionalJwt = expressJwt({
+  secret: process.env.JWT_SECRET,
   credentialsRequired: false,
 });
 
-export const authCheck = (() => {
-  const router = express.Router();
-  router.use(validateJwt);
-  router.use(async (req: Request, res: Response, next: NextFunction) => {
+export const authResolve = compose([
+  validateOptionalJwt,
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (!req.user) {
         req.user = { status: 'visitor' };
@@ -22,40 +27,57 @@ export const authCheck = (() => {
       }
       const user = await User.findById(req.user.id);
       if (!user) {
-        return void res.status(401).json({ message: `user doesn't exist` });
+        return void res.status(401).json({ message: `User doesn't exist` });
       }
       req.user = user;
       next();
     } catch (err) {
-      return void res.status(401).json({ message: 'invalid token' });
+      return void res.status(401).json({ message: 'Invalid token' });
     }
-  });
-  return router;
-})();
+  },
+]);
 
-// export const authGuard = (status: string) => {
-//   return (() => {
-//     const router = express.Router();
-//     router.use(validateJwt);
-//     router.use(async (req: Request, res: Response, next: NextFunction) => {
-//       try {
-//         if (!req.user) {
-//           req.user = { status: 'visitor' };
-//           return next();
-//         }
-//         const user = await User.findById(req.user.id);
-//         if (!user) {
-//           return void res.status(401).json({ message: `user doesn't exist` });
-//         }
-//         req.user = user;
-//         next();
-//       } catch (err) {
-//         return void res.status(401).json({ message: 'invalid token' });
-//       }
-//     });
-//     return router;
-//   };
-// })();
+export const isAuthenticated = compose([
+  validateJwt,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = await User.findById(req.user.id);
+      if (!user) {
+        return res.status(401).json({ message: `User doesn't exist` });
+      }
+      req.user = user;
+      next();
+    } catch (err) {
+      return res.status(500).json(err);
+    }
+  },
+  async (err: any, req: Request, res: Response, next: NextFunction) => {
+    if (err.name === 'UnauthorizedError') {
+      return res.status(err.status).json(err);
+    }
+    return res.status(500).json(err);
+  },
+]);
+
+export const isUser = compose([
+  isAuthenticated,
+  (req: Request, res: Response, next: NextFunction) => {
+    if (req.user.status !== 'user') {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+    next();
+  },
+]);
+
+export const isAdmin = compose([
+  isUser,
+  (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+    next();
+  },
+]);
 
 const signToken = (id: string): string =>
   jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -105,32 +127,3 @@ export const sendMail = (user: IUserDocument) => {
   console.log('msg :', msg);
   return sgMail.send(msg);
 };
-
-//   const router = express.Router();
-
-//       // Validate jwt
-//   router.use((req: Request, res: Response, next: NextFunction) => {
-//         // allow access_token to be passed through query parameter as well
-//         if (req.query && req.query.hasOwnProperty('access_token')) {
-//           req.headers.authorization = 'Bearer ' + req.query.access_token;
-//         }
-//         validateJwt(req, res, next);
-//       });
-//       // Attach user to request
-//   router.use((req: Request, res: Response, next: NextFunction) => {
-//         UserModel.findById(req.user._id, (err, user) => {
-//           if (err) {
-//             return next(err);
-//           }
-//           if (!user) {
-//             return res.sendStatus(401);
-//           }
-//           if (user.disabled) {
-//             return res.status(401).send('account disabled');
-//           }
-//           req.user = user;
-//           next();
-//         });
-//       });
-//   )
-// }

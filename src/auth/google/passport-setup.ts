@@ -42,6 +42,7 @@ passport.use(
             photo,
             provider: 'google',
             verified: true,
+            isAdmin: false,
           };
           user = await new User(userInfo).save();
           logger.info(`new Google user sign-in: ${user.email}`);

@@ -6,9 +6,9 @@ import { encryptPassword, User } from '../models/User';
 import { sendToken, setTokenCookie } from './auth-service';
 import './google/passport-setup';
 
-const router = express.Router();
+const authRouter = express.Router();
 
-router
+authRouter
   .get(
     '/google/callback',
     passport.authenticate('google', { session: false }),
@@ -28,7 +28,7 @@ router
     ),
   );
 
-router.post(
+authRouter.post(
   '/login',
   body('email', 'The email address is invalid').isEmail(),
   body('password', 'Password is required').exists(),
@@ -50,7 +50,7 @@ router.post(
   sendToken,
 );
 
-router.post(
+authRouter.post(
   '/signup',
   [
     body('name', 'Name is required')
@@ -91,4 +91,4 @@ router.post(
   sendToken,
 );
 
-export default router;
+export default authRouter;

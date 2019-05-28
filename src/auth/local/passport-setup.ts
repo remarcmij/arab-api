@@ -6,20 +6,20 @@ passport.use(
   new LocalStrategy(
     {
       usernameField: 'email',
-      passwordField: 'password', // this is the virtual field on the model
+      passwordField: 'password',
     },
     async (email, password, done) => {
       try {
         const user = await User.findOne({ email });
         if (!user) {
           return void done(null, false, {
-            message: 'Invalid credentials.',
+            message: 'Invalid credentials',
           });
         }
         const validated = await comparePassword(password, user.hashedPassword);
         if (!validated) {
           return done(null, false, {
-            message: 'Invalid credentials.',
+            message: 'Invalid credentials',
           });
         }
         return done(null, user);

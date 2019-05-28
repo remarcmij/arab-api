@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import mongoose, { Document, Schema } from 'mongoose';
 
-type Status = 'visitor' | 'registered' | 'user' | 'admin';
+type Status = 'visitor' | 'registered' | 'user';
 export type Provider = 'local' | 'google' | 'facebook';
 
 export interface IUser {
@@ -12,6 +12,7 @@ export interface IUser {
   hashedPassword?: string;
   provider: Provider;
   verified: boolean;
+  isAdmin: boolean;
   created?: Date;
   lastAccess?: Date;
 }
@@ -24,6 +25,7 @@ const UserSchema = new Schema<IUser>({
   hashedPassword: { type: String, required: false },
   provider: { type: String, required: true },
   verified: { type: Boolean, default: false },
+  isAdmin: { type: Boolean, default: false },
   created: { type: Date, default: Date.now },
   lastAccess: { type: Date, default: Date.now },
 });
@@ -42,7 +44,6 @@ export interface IUserDocument extends Document, IUser {}
 
 export const User = mongoose.model<IUserDocument>('User', UserSchema);
 
-export const isAuthorizedUser = (user: IUser) =>
-  user.status === 'user' || user.status === 'admin';
+export const isAuthorizedUser = (user: IUser) => user.status === 'user';
 
-export const isAdmin = (user: IUser) => user.status === 'admin';
+export const isAdmin = (user: IUser) => user.isAdmin;

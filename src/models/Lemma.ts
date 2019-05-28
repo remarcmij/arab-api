@@ -6,7 +6,7 @@ export interface ILemma {
   rom?: string;
   filename: string;
   sectionNum: number;
-  _topicId?: Schema.Types.ObjectId;
+  topic?: Schema.Types.ObjectId;
 }
 
 const LemmaSchema = new Schema<ILemma>({
@@ -15,7 +15,7 @@ const LemmaSchema = new Schema<ILemma>({
   rom: { type: String, required: false },
   filename: { type: String, required: true },
   sectionNum: { type: Number, required: true },
-  _topicId: { type: Schema.Types.ObjectId, required: true },
+  topic: { type: Schema.Types.ObjectId, required: true },
 });
 
 export interface ILemmaDocument extends Document, ILemma {}

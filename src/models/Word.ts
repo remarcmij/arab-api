@@ -5,8 +5,8 @@ export interface IWord {
   lang: string;
   filename: string;
   order: number;
-  _lemmaId: Schema.Types.ObjectId;
-  _topicId: Schema.Types.ObjectId;
+  lemma: Schema.Types.ObjectId;
+  topic: Schema.Types.ObjectId;
 }
 
 const WordSchema = new Schema<IWord>({
@@ -14,8 +14,8 @@ const WordSchema = new Schema<IWord>({
   lang: { type: String, required: true },
   filename: { type: String, required: true },
   order: { type: Number, required: true },
-  _lemmaId: { type: Schema.Types.ObjectId, required: true, ref: 'Lemma' },
-  _topicId: { type: Schema.Types.ObjectId, required: true, ref: 'Topic' },
+  lemma: { type: Schema.Types.ObjectId, required: true, ref: 'Lemma' },
+  topic: { type: Schema.Types.ObjectId, required: true, ref: 'Topic' },
 });
 
 export interface IWordDocument extends Document, IWord {}

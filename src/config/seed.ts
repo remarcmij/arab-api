@@ -13,6 +13,7 @@ export default async () => {
         email: process.env.ADMIN_EMAIL,
         hashedPassword,
         verified: true,
+        isAdmin: true,
       });
       logger.info('created admin account');
     }

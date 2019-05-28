@@ -1,15 +1,15 @@
 import express, { Request, Response } from 'express';
-import { param, query, validationResult } from 'express-validator/check';
-import { authCheck } from '../auth/auth-service';
+import { check, validationResult } from 'express-validator/check';
+import { authResolve, isAuthenticated } from '../auth/auth-service';
 import '../auth/local/passport-setup';
 import logger from '../config/logger';
 import { ITopic } from '../models/Topic';
 import { isAuthorizedUser, User } from '../models/User';
 import * as db from './db';
 
-const router = express.Router();
+const apiRouter = express.Router();
 
-const hasRequestErrors = (req: Request, res: Response): boolean => {
+const handleRequestErrors = (req: Request, res: Response): boolean => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(400).json({ errors: errors.array() });
@@ -18,38 +18,51 @@ const hasRequestErrors = (req: Request, res: Response): boolean => {
   return false;
 };
 
-router.get('/', authCheck, (req: Request, res: Response) => {
+/*
+ * @oas [get] /api
+ * description: Returns a list of publications topics
+ */
+apiRouter.get('/', authResolve, (req: Request, res: Response) => {
   const isAuthorized = isAuthorizedUser(req.user);
   db.getIndexTopics()
     .then(topics => topics.filter(topic => !topic.restricted || isAuthorized))
     .then(topics => res.json(topics));
 });
 
-router.get('/profile', authCheck, async (req: Request, res: Response) => {
-  try {
-    const user = await User.findOne({ email: req.user.email }).select(
-      '-hashedPassword',
-    );
-    if (!user) {
-      return res.sendStatus(401);
+apiRouter.get(
+  '/profile',
+  isAuthenticated,
+  async (req: Request, res: Response) => {
+    try {
+      const user = await User.findOne({ email: req.user.email }).select(
+        '-hashedPassword',
+      );
+      if (!user) {
+        return res.sendStatus(401);
+      }
+      user.lastAccess = new Date();
+      await user.save();
+      logger.info(`user ${user.email} (${user.status}) signed in`);
+      res.json(user);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
     }
-    user.lastAccess = new Date();
-    await user.save();
-    logger.info(`user ${user.email} (${user.status}) signed in`);
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+  },
+);
 
-router.get(
+/* @oas [get] /api/index/{publication}
+ * description: Returns a list of article topics
+ * parameters:
+ *   - (path) publication {string} The publication name
+ */
+apiRouter.get(
   '/index/:publication',
-  authCheck,
-  param('publication', 'publication is required')
+  authResolve,
+  check('publication', 'publication is required')
     .not()
     .isEmpty(),
   (req: Request, res: Response) => {
-    if (hasRequestErrors(req, res)) {
+    if (handleRequestErrors(req, res)) {
       return;
     }
     const isAuthorized = isAuthorizedUser(req.user);
@@ -59,14 +72,19 @@ router.get(
   },
 );
 
-router.get(
+/* @oas [get] /api/article/{filename}
+ * description: Returns an article topic
+ * parameters:
+ *   - (path) filename {string} The article filename
+ */
+apiRouter.get(
   '/article/:filename',
-  authCheck,
-  param('filename', 'filename is required')
+  authResolve,
+  check('filename', 'filename is required')
     .not()
     .isEmpty(),
   (req: Request, res: Response) => {
-    if (hasRequestErrors(req, res)) {
+    if (handleRequestErrors(req, res)) {
       return;
     }
     const { filename } = req.params;
@@ -84,14 +102,14 @@ router.get(
   },
 );
 
-router.get(
+apiRouter.get(
   '/search',
-  authCheck,
-  query('term', 'term is required')
+  authResolve,
+  check('term', 'term is required')
     .not()
     .isEmpty(),
   (req: Request, res: Response): void => {
-    if (hasRequestErrors(req, res)) {
+    if (handleRequestErrors(req, res)) {
       return;
     }
     const { term } = req.query;
@@ -101,13 +119,13 @@ router.get(
   },
 );
 
-router.get(
+apiRouter.get(
   '/lookup',
-  query('term', 'term is required')
+  check('term', 'term is required')
     .not()
     .isEmpty(),
   (req: Request, res: Response) => {
-    if (hasRequestErrors(req, res)) {
+    if (handleRequestErrors(req, res)) {
       return;
     }
     const { term } = req.query;
@@ -117,4 +135,4 @@ router.get(
   },
 );
 
-export default router;
+export default apiRouter;

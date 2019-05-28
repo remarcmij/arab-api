@@ -30,8 +30,8 @@ async function insertWords(
             lang: 'nl',
             filename: topicDoc.filename,
             order: index,
-            _lemmaId: lemmaId,
-            _topicId: topicDoc._id,
+            lemma: lemmaId,
+            topic: topicDoc._id,
           },
         },
       }),
@@ -44,8 +44,8 @@ async function insertWords(
             lang: 'ar',
             filename: topicDoc.filename,
             order: index,
-            _lemmaId: lemmaId,
-            _topicId: topicDoc._id,
+            lemma: lemmaId,
+            topic: topicDoc._id,
           },
         },
       }),
@@ -63,7 +63,7 @@ async function insertLemmas(topicDoc: ITopicDocument, lemmas: ILemma[]) {
       document: {
         ...lemma,
         filename: topicDoc.filename,
-        _topicId: topicDoc._id,
+        topic: topicDoc._id,
       },
     },
   }));
@@ -128,8 +128,8 @@ export async function deleteTopic(filename: string) {
   const topic = await Topic.findOne({ filename });
   if (topic) {
     await Promise.all([
-      Word.deleteMany({ _topicId: topic._id }),
-      Lemma.deleteMany({ _topicId: topic._id }),
+      Word.deleteMany({ topic: topic._id }),
+      Lemma.deleteMany({ topic: topic._id }),
       Topic.deleteOne({ filename }),
     ]);
   }
@@ -147,21 +147,21 @@ export function getArticleTopics(publication: string) {
 
 export async function getArticle(filename: string) {
   const topic = await Topic.findOne({ filename }).lean();
-  topic.lemmas = await Lemma.find({ _topicId: topic._id });
+  topic.lemmas = await Lemma.find({ topic: topic._id });
   return topic;
 }
 
 export async function searchWord(word: string, isAuthorized: boolean) {
   const results = await Word.find({ word })
     .sort('filename order')
-    .populate('_lemmaId _topicId')
+    .populate('lemma topic')
     .lean();
 
   return results
-    .filter((result: any) => isAuthorized || !result._topicId.restricted)
+    .filter((result: any) => isAuthorized || !result.topic.restricted)
     .map((result: any) => ({
-      ...result._lemmaId,
-      title: result._topicId.title,
+      ...result.lemma,
+      title: result.topic.title,
     }));
 }
 

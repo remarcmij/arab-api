@@ -1,0 +1,11 @@
+openapi: "3.0.0"
+x-api-id: "arab-api"
+info: 
+  version: "1.0.0"
+  title: "arab-api"
+  license: 
+    name: "ISC"
+servers: 
+  - 
+    url: "http://localhost:8080"
+paths: {}
