@@ -1,5 +1,6 @@
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
+import * as C from '../../constants';
 import { User, validatePassword as comparePassword } from '../../models/User';
 
 passport.use(
@@ -13,13 +14,13 @@ passport.use(
         const user = await User.findOne({ email });
         if (!user) {
           return void done(null, false, {
-            message: 'Invalid credentials',
+            message: C.INVALID_CREDENTIALS,
           });
         }
         const validated = await comparePassword(password, user.hashedPassword);
         if (!validated) {
           return done(null, false, {
-            message: 'Invalid credentials',
+            message: C.INVALID_CREDENTIALS,
           });
         }
         return done(null, user);

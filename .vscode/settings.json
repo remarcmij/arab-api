@@ -1,7 +1,10 @@
 {
   "cSpell.words": [
+    "Romanization",
     "SENDGRID",
     "Tashkeel",
+    "Transcoder",
+    "clsx",
     "dotfiles",
     "etag",
     "maxsize",
@@ -10,6 +13,7 @@
     "stemword",
     "strikethrough",
     "subfolder",
+    "typesafe",
     "wordlist"
   ],
   "cSpell.ignorePaths": [

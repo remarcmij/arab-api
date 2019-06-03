@@ -12,7 +12,7 @@ const apiRouter = express.Router();
 const handleRequestErrors = (req: Request, res: Response): boolean => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    res.status(400).json({ errors: errors.array() });
+    res.status(400).json(errors.array());
     return true;
   }
   return false;
@@ -134,5 +134,7 @@ apiRouter.get(
       .catch(err => res.status(500).json({ error: err.message }));
   },
 );
+
+apiRouter.use('*', (req: Request, res: Response) => res.sendStatus(404));
 
 export default apiRouter;

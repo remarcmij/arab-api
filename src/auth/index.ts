@@ -2,8 +2,14 @@ import express, { NextFunction, Request, Response } from 'express';
 import { body, validationResult } from 'express-validator/check';
 import passport from 'passport';
 import logger from '../config/logger';
+import * as C from '../constants';
 import { encryptPassword, User } from '../models/User';
-import { sendToken, setTokenCookie } from './auth-service';
+import {
+  isAuthenticated,
+  sendMail,
+  sendToken,
+  setTokenCookie,
+} from './auth-service';
 import './google/passport-setup';
 
 const authRouter = express.Router();
@@ -30,8 +36,8 @@ authRouter
 
 authRouter.post(
   '/login',
-  body('email', 'The email address is invalid').isEmail(),
-  body('password', 'Password is required').exists(),
+  body('email', C.EMAIL_ADDRESS_REQUIRED).isEmail(),
+  body('password', C.PASSWORD_REQUIRED).exists(),
   (req, res, next) => {
     passport.authenticate('local', (err, user, info) => {
       const error = err || info;
@@ -40,7 +46,7 @@ authRouter.post(
       }
       if (!user) {
         return void res.status(401).json({
-          message: 'Something went wrong, please try again.',
+          message: C.SOMETHING_WENT_WRONG,
         });
       }
       req.user = user;
@@ -53,14 +59,11 @@ authRouter.post(
 authRouter.post(
   '/signup',
   [
-    body('name', 'Name is required')
+    body('name', C.NAME_REQUIRED)
       .not()
       .isEmpty(),
-    body('email', 'The email address is invalid').isEmail(),
-    body(
-      'password',
-      'Please enter a password of 8 characters or more',
-    ).isLength({
+    body('email', C.EMAIL_ADDRESS_INVALID).isEmail(),
+    body('password', C.PASSWORD_MIN_LENGTH).isLength({
       min: 8,
     }),
   ],
@@ -69,26 +72,54 @@ authRouter.post(
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    const { name, email, password } = req.body;
-    let user = await User.findOne({ email });
 
-    if (user) {
-      return res.status(400).json({ message: 'User already exists' });
+    try {
+      const { name, email, password } = req.body;
+      let user = await User.findOne({ email });
+
+      if (user) {
+        return res.status(400).json({ message: C.USERS_ALREADY_EXISTS });
+      }
+
+      const hashedPassword = await encryptPassword(password);
+      user = await User.create({
+        provider: 'local',
+        status: 'registered',
+        name,
+        email,
+        hashedPassword,
+      });
+      req.user = user;
+      logger.info(`new user signed up ${email}`);
+      const [response] = await sendMail(user);
+      if (response.statusCode === 202) {
+        logger.debug('email submitted');
+      }
+      next();
+    } catch (err) {
+      logger.error(err.message);
     }
-
-    const hashedPassword = await encryptPassword(password);
-    user = await User.create({
-      provider: 'local',
-      status: 'registered',
-      name,
-      email,
-      hashedPassword,
-    });
-    req.user = user;
-    logger.info(`created account for ${email}`);
-    next();
   },
   sendToken,
 );
+
+authRouter.get('/', isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const user = await User.findOne({ email: req.user.email }).select(
+      '-hashedPassword',
+    );
+    if (!user) {
+      return res.sendStatus(401);
+    }
+    user.lastAccess = new Date();
+    await user.save();
+    logger.info(`user ${user.email} (${user.status}) signed in`);
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+authRouter.use('*', (req: Request, res: Response) => res.sendStatus(404));
 
 export default authRouter;

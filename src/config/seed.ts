@@ -8,7 +8,7 @@ export default async () => {
       const hashedPassword = await encryptPassword(process.env.ADMIN_PASSWORD);
       await User.create({
         provider: 'local',
-        status: 'admin',
+        status: 'user',
         name: 'Admin',
         email: process.env.ADMIN_EMAIL,
         hashedPassword,

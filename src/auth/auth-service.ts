@@ -117,7 +117,8 @@ export const sendMail = (user: IUserDocument) => {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
   /* cSpell: disable */
   const msg = {
-    to: process.env.ADMIN_EMAIL,
+    // to: process.env.ADMIN_EMAIL,
+    to: 'remarcmij@gmail.com',
     from: 'noreply@studiehulp-arabisch.nl',
     subject: 'Nieuwe Studiehulp Arabisch gebruiker',
     text: 'and easy to do anywhere, even with Node.js',

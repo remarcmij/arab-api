@@ -45,10 +45,10 @@ passport.use(
             isAdmin: false,
           };
           user = await new User(userInfo).save();
-          logger.info(`new Google user sign-in: ${user.email}`);
+          logger.info(`new Google user signed in: ${user.email}`);
           await sendMail(user);
         } else {
-          logger.debug(`Google user sign-in: ${user.email}`);
+          logger.debug(`existing Google user signed in: ${user.email}`);
         }
         cb(null, user);
       } catch (err) {
