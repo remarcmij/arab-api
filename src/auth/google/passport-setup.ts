@@ -1,3 +1,5 @@
+/// <reference types="../../typings/passport-google-oauth20" />
+
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import logger from '../../config/logger';
@@ -38,7 +40,7 @@ passport.use(
           const userInfo: IUser = {
             email,
             name: displayName,
-            status: 'registered',
+            status: 'signed-up',
             photo,
             provider: 'google',
             verified: true,

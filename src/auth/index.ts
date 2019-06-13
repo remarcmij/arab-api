@@ -84,7 +84,7 @@ authRouter.post(
       const hashedPassword = await encryptPassword(password);
       user = await User.create({
         provider: 'local',
-        status: 'registered',
+        status: 'signed-up',
         name,
         email,
         hashedPassword,

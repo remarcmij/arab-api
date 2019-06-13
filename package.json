@@ -5,11 +5,10 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node .",
-    "server-ts": "tsc --watch",
-    "server": "NODE_ENV=development nodemon --ext js --watch dist .",
+    "start": "node dist/index.js",
+    "server": "NODE_ENV=development nodemon src/index.ts",
     "client": "npm start --prefix arab-client",
-    "dev": "concurrently \"npm run server-ts\" \"npm run server\" \"npm run client\"",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
     "cleardb": "node dist/cleardb",
     "test": "jest"
   },

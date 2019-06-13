@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import mongoose, { Document, Schema } from 'mongoose';
 
-type Status = 'visitor' | 'registered' | 'user';
+type Status = 'visitor' | 'signed-up' | 'user';
 export type Provider = 'local' | 'google' | 'facebook';
 
 export interface IUser {
