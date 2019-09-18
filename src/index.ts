@@ -2,6 +2,7 @@
 require('dotenv').load();
 import compression from 'compression';
 import cors from 'cors';
+import exitHook from 'exit-hook';
 import express from 'express';
 import morgan from 'morgan';
 import passport from 'passport';
@@ -33,7 +34,7 @@ const clientPath =
 
 const docRoot = path.resolve(__dirname, clientPath);
 
-const main = async () => {
+(async () => {
   await connectDB();
   const app = express();
   app.use(cors());
@@ -60,6 +61,8 @@ const main = async () => {
       logger.error(`error stating server: ${err.message}`);
     }
   });
-};
 
-main();
+  exitHook(() => {
+    logger.info('Exiting');
+  });
+})();

@@ -5,7 +5,7 @@ export interface ILemma {
   ar: string;
   rom?: string;
   filename: string;
-  sectionNum: number;
+  sectionIndex: number;
   topic?: Schema.Types.ObjectId;
 }
 
@@ -14,7 +14,7 @@ const LemmaSchema = new Schema<ILemma>({
   ar: { type: String, required: true },
   rom: { type: String, required: false },
   filename: { type: String, required: true },
-  sectionNum: { type: Number, required: true },
+  sectionIndex: { type: Number, required: true },
   topic: { type: Schema.Types.ObjectId, required: true },
 });
 

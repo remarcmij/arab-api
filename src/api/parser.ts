@@ -1,18 +1,13 @@
 import { ILemma } from '../models/Lemma';
 
-interface IFieldDef {
-  name: keyof ILemma;
-  required?: boolean;
-}
-
-const COLUMN_DEFS: IFieldDef[] = [
+const COLUMN_DEFS = [
   { name: 'nl', required: true },
   { name: 'ar', required: true },
-  { name: 'rom' },
+  { name: 'rom', required: false },
 ];
 
-const TABLE_HEADER = /^[a-z]+(?: \| [a-z]+)+$/;
-const TABLE_DIVIDER = /^[ -:|]+$/;
+const TABLE_HEADER_REGEXP = /^[a-z]+(?: \| [a-z]+)+$/;
+const TABLE_DIVIDER_REGEXP = /^[ -:|]+$/;
 
 const next = (iter: IterableIterator<string>) => {
   const item = iter.next();
@@ -29,10 +24,10 @@ const extractCells = (line: string, expectedCount?: number) => {
   return cells;
 };
 
-function parseTable(
+function parseLemmaTable(
   iter: IterableIterator<string>,
   columnNames: string[],
-  sectionNum: number,
+  sectionIndex: number,
 ) {
   const lemmas: ILemma[] = [];
 
@@ -41,7 +36,7 @@ function parseTable(
     throw new Error('Unexpected end of input');
   }
 
-  if (!TABLE_DIVIDER.test(item.value)) {
+  if (!TABLE_DIVIDER_REGEXP.test(item.value)) {
     throw new Error(
       `Expected a markdown table divider but found: '${item.value}'`,
     );
@@ -67,7 +62,7 @@ function parseTable(
         }
         return prev;
       },
-      { sectionNum } as ILemma,
+      { sectionIndex } as ILemma,
     );
     lemmas.push(lemma);
     item = next(iter);
@@ -89,19 +84,25 @@ function validateColumnNames(columnNames: string[]) {
   });
 }
 
-export function parseBody(body: string) {
+function getLineIterator(body: string) {
   const lines = body.trim().split('\n');
-  const iter = lines[Symbol.iterator]();
+  return lines[Symbol.iterator]();
+}
+
+export function parseBody(body: string) {
+  const iter = getLineIterator(body);
   const sections: string[] = [];
   let lemmas: ILemma[] = [];
   let sectionText = '';
   let item = next(iter);
 
   while (!item.done) {
-    if (TABLE_HEADER.test(item.value)) {
+    if (TABLE_HEADER_REGEXP.test(item.value)) {
       const columnNames = extractCells(item.value);
       validateColumnNames(columnNames);
-      lemmas = lemmas.concat(parseTable(iter, columnNames, sections.length));
+      lemmas = lemmas.concat(
+        parseLemmaTable(iter, columnNames, sections.length),
+      );
       if (sectionText) {
         sections.push(sectionText);
         sectionText = '';
