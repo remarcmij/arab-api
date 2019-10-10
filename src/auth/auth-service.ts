@@ -7,13 +7,15 @@ import { IUserDocument, User } from '../models/User';
 
 const EXPIRES_IN_SECONDS = 30 * 24 * 60 * 60; // days * hours/day * minutes/hour * seconds/minute
 
+const JWT_SECRET = process.env.JWT_SECRET || 'my_secret';
+
 const validateJwt = expressJwt({
-  secret: process.env.JWT_SECRET,
+  secret: JWT_SECRET,
   credentialsRequired: true,
 });
 
 const validateOptionalJwt = expressJwt({
-  secret: process.env.JWT_SECRET,
+  secret: JWT_SECRET,
   credentialsRequired: false,
 });
 
@@ -80,7 +82,7 @@ export const isAdmin = compose([
 ]);
 
 const signToken = (id: string): string =>
-  jwt.sign({ id }, process.env.JWT_SECRET, {
+  jwt.sign({ id }, JWT_SECRET, {
     expiresIn: EXPIRES_IN_SECONDS,
   });
 
@@ -114,6 +116,9 @@ export const sendToken = (req: Request, res: Response) => {
 };
 
 export const sendMail = (user: IUserDocument) => {
+  if (process.env.SENDGRID_API_KEY == null) {
+    throw new Error('Missing SendGrid API key environment variable');
+  }
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
   /* cSpell: disable */
   const msg = {

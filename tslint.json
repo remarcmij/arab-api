@@ -5,7 +5,11 @@
     "arrow-parens": false,
     "quotemark": [true, "single"],
     "semicolon": [true, "always"],
-    "object-literal-sort-keys": false
+    "object-literal-sort-keys": false,
+    "no-console": false,
+    "variable-name": {
+      "options": ["allow-leading-underscore"]
+    }
   },
   "jsRules": {},
   "rulesDirectory": []

@@ -17,7 +17,9 @@ passport.use(
             message: C.INVALID_CREDENTIALS,
           });
         }
-        const validated = await comparePassword(password, user.hashedPassword);
+        const validated =
+          !!user.hashedPassword &&
+          (await comparePassword(password, user.hashedPassword));
         if (!validated) {
           return done(null, false, {
             message: C.INVALID_CREDENTIALS,

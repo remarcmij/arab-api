@@ -12,6 +12,7 @@
     "paths": {
       "*": ["node_modules/*"]
     },
+    "strict": true,
     "incremental": true
   },
   "include": ["src/**/*"]
