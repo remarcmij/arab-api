@@ -83,4 +83,5 @@ dist/
 build/
 content/*.md
 notes/
+tsconfig.tsbuildinfo
 
