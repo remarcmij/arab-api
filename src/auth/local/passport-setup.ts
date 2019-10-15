@@ -1,7 +1,7 @@
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
 import * as C from '../../constants';
-import { User, validatePassword as comparePassword } from '../../models/User';
+import User, { validatePassword as comparePassword } from '../../models/User';
 
 passport.use(
   new LocalStrategy(

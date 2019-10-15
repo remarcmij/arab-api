@@ -1,6 +1,6 @@
 import { ILemma } from '../models/Lemma';
-import { extractWords as extractTargetWords } from './lang/ar';
-import { extractWords as extractSourceWords } from './lang/nl';
+import { extractWords as extractForeignWords } from './lang/ar';
+import { extractWords as extractNativeWords } from './lang/nl';
 
 export const removeParenthesizedFragments = (line: string) => {
   const regexp = /[()]/g;
@@ -40,12 +40,12 @@ const removeBracketedText = (text: string) => text.replace(/\[.*]/g, '');
 const removeParentheses = (text: string) => text.replace(/[()]/g, '');
 
 export const extractLemmaWords = (lemma: ILemma) => {
-  const cleansedText = removeBracketedText(lemma.nl);
+  const cleansedText = removeBracketedText(lemma.native);
   const extractText =
     removeParenthesizedFragments(cleansedText) +
     ' ' +
     removeParentheses(cleansedText);
-  const nl = extractSourceWords(extractText);
-  const ar = extractTargetWords(lemma.ar);
-  return { nl, ar };
+  const nativeWords = extractNativeWords(extractText);
+  const foreignWords = extractForeignWords(lemma.foreign);
+  return { nativeWords, foreignWords };
 };

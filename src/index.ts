@@ -54,8 +54,8 @@ const docRoot = path.resolve(__dirname, clientPath);
   app.listen(PORT, async () => {
     logger.info('---------------------------------------');
     try {
-      await content.refreshContent();
-      await content.watchContent();
+      await content.syncContent();
+      content.watchContent();
       logger.info(`server started at http://localhost:${PORT}`);
     } catch (err) {
       logger.error(`error stating server: ${err.message}`);

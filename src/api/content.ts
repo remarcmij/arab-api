@@ -1,15 +1,20 @@
+import { tsConstructorType } from '@babel/types';
 import crypto from 'crypto';
 import fm from 'front-matter';
 import fs from 'fs';
 import _glob from 'glob';
+import debounce from 'lodash.debounce';
 import path from 'path';
 import util from 'util';
 import logger from '../config/logger';
 import * as db from './db';
 import { parseBody } from './parser';
+import TaskQueue from './TaskQueue';
 
 const glob = util.promisify(_glob);
-const fsAccess = util.promisify(fs.access);
+const CONCURRENCY = 2;
+
+const taskQueue = new TaskQueue<void>(CONCURRENCY);
 
 export interface IWords {
   nl: string[];
@@ -33,16 +38,12 @@ export interface IFrontMatterFile {
   body: string;
 }
 
-const readFile = util.promisify(fs.readFile);
-
-const contentDir = path.join(
+const CONTENT_DIR = path.join(
   __dirname,
   process.env.NODE_ENV === 'production'
     ? '../../content'
     : '../../../arab-content/content',
 );
-
-const parseFilename = (filename: string) => filename.match(/^(.+)\.(.+)\.md$/);
 
 function computeSha(data: string) {
   const shaSum = crypto.createHash('sha1');
@@ -50,80 +51,69 @@ function computeSha(data: string) {
   return shaSum.digest('hex');
 }
 
-async function loadDocument(filename: string): Promise<any> {
-  const filePath = path.join(contentDir, filename);
-  const [, publication, article] = parseFilename(filename);
-  const filenameBase = `${publication}.${article}`;
-
-  const docText = await readFile(filePath, 'utf8');
-
-  const sha = computeSha(docText);
-  const docSha = await db.getTopicSha(filenameBase);
-
-  if (sha === docSha) {
-    logger.info(`unchanged: ${filename}`);
-    return;
-  }
-
-  logger.debug(`loading: ${filename}`);
-
-  await db.deleteTopic(filenameBase);
-
-  const doc: IFrontMatterFile = fm<IAttributes>(docText);
-
-  const attr = {
-    ...doc.attributes,
-    article,
-    filename: filenameBase,
-    publication,
-    sha,
-  };
-
-  let insertDoc: any;
-
-  if (article === 'index') {
-    insertDoc = { ...attr };
-  } else {
-    const { sections, lemmas } = parseBody(doc.body);
-    insertDoc = { ...attr, lemmas, sections };
-  }
-
-  db.insertTopic(insertDoc);
-}
-
-export async function refreshContent() {
-  const filePaths = await glob(`${contentDir}/*.md`);
-  filePaths.forEach(async filePath => {
-    const [, filename] = filePath.match(/^.*[/\\](.+)$/);
-    await loadDocument(filename);
-  });
-}
-
-export async function watchContent() {
+async function loadDocument(filePath: string) {
   try {
-    fs.watch(contentDir, async (event, filename) => {
-      try {
-        const filePath = path.join(contentDir, filename);
+    const { name: filename } = path.parse(filePath);
+    const [publication, article] = filename.split('.');
 
-        switch (event) {
-          case 'change':
-            await loadDocument(filename);
-            break;
-          case 'rename': {
-            await fsAccess(filePath).then(
-              () => loadDocument(filename),
-              () => db.deleteTopic(filename),
-            );
-            break;
-          }
-          default:
-            throw new Error(`Unexpected 'watch' event type: ${event}`);
-        }
-      } catch (error) {
-        logger.error(error);
-      }
-    });
-  } catch (error) {
-    logger.error(error);
+    if (!article) {
+      throw new Error(
+        `Expected filename format <publication>.<article> but got: ${filename}`,
+      );
+    }
+
+    const docText = await fs.promises.readFile(filePath, 'utf8');
+
+    const sha = computeSha(docText);
+    const docSha = await db.getTopicSha(filename);
+
+    if (sha === docSha) {
+      logger.info(`unchanged: ${filename}`);
+      return;
+    }
+
+    logger.debug(`loading: ${filename}`);
+
+    await db.deleteTopic(filename);
+
+    const doc: IFrontMatterFile = fm<IAttributes>(docText);
+
+    const attr = {
+      ...doc.attributes,
+      article,
+      filename,
+      publication,
+      sha,
+    };
+
+    let insertDoc: any;
+
+    if (article === 'index') {
+      insertDoc = { ...attr };
+    } else {
+      const { sections, lemmas } = parseBody(doc.body);
+      insertDoc = { ...attr, lemmas, sections };
+    }
+
+    db.insertTopic(insertDoc);
+  } catch (err) {
+    logger.error(err);
   }
+}
+
+export async function syncContent() {
+  const filePaths = await glob(`${CONTENT_DIR}/*.md`);
+  filePaths.forEach(filePath => {
+    taskQueue.pushTask(() => loadDocument(filePath));
+  });
+  // TODO: handle deleted files
+}
+
+export function watchContent() {
+  const refreshContentDebounced = debounce(syncContent, 5000, {
+    trailing: true,
+  });
+  fs.watch(CONTENT_DIR, async (event, filename) => {
+    refreshContentDebounced();
+  });
 }

@@ -3,7 +3,8 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import logger from '../../config/logger';
-import { IUser, IUserDocument, User } from '../../models/User';
+import User, { IUser, IUserDocument } from '../../models/User';
+import { assertEnvVar } from '../../util';
 import { sendMail } from '../auth-service';
 
 interface IGoogleProfile {
@@ -37,7 +38,7 @@ async function verify(
       const userInfo: IUser = {
         email,
         name: displayName,
-        status: 'signed-up',
+        status: 'registered',
         photo,
         provider: 'google',
         verified: true,
@@ -57,17 +58,13 @@ async function verify(
 
 passport.use(
   (() => {
-    if (process.env.GOOGLE_CLIENT_ID == null) {
-      throw new Error('Missing Google Client ID environment variable');
-    }
-    if (process.env.GOOGLE_CLIENT_SECRET == null) {
-      throw new Error('Missing Google Client Secret environment variable');
-    }
+    assertEnvVar('GOOGLE_CLIENT_ID');
+    assertEnvVar('GOOGLE_CLIENT_SECRET');
     return new GoogleStrategy<IGoogleProfile, IUserDocument>(
       {
         callbackURL: '/auth/google/callback',
-        clientID: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        clientID: process.env.GOOGLE_CLIENT_ID!,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       },
       verify,
     );

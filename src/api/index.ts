@@ -1,10 +1,10 @@
 import express, { Request, Response } from 'express';
 import { check, validationResult } from 'express-validator/check';
-import { authResolve, isAuthenticated } from '../auth/auth-service';
+import { isAuthenticated, maybeAuthenticated } from '../auth/auth-service';
 import '../auth/local/passport-setup';
 import logger from '../config/logger';
 import { ITopic } from '../models/Topic';
-import { isAuthorizedUser, User } from '../models/User';
+import User, { isAuthorized } from '../models/User';
 import * as db from './db';
 
 const apiRouter = express.Router();
@@ -22,10 +22,11 @@ const handleRequestErrors = (req: Request, res: Response): boolean => {
  * @oas [get] /api
  * description: Returns a list of publications topics
  */
-apiRouter.get('/', authResolve, (req: Request, res: Response) => {
-  const isAuthorized = isAuthorizedUser(req.user);
+apiRouter.get('/', maybeAuthenticated, (req: Request, res: Response) => {
   db.getIndexTopics()
-    .then(topics => topics.filter(topic => !topic.restricted || isAuthorized))
+    .then(topics =>
+      topics.filter(topic => !topic.restricted || isAuthorized(req.user)),
+    )
     .then(topics => res.json(topics));
 });
 
@@ -34,7 +35,7 @@ apiRouter.get(
   isAuthenticated,
   async (req: Request, res: Response) => {
     try {
-      const user = await User.findOne({ email: req.user.email }).select(
+      const user = await User.findOne({ email: req.user!.email }).select(
         '-hashedPassword',
       );
       if (!user) {
@@ -57,7 +58,7 @@ apiRouter.get(
  */
 apiRouter.get(
   '/index/:publication',
-  authResolve,
+  maybeAuthenticated,
   check('publication', 'publication is required')
     .not()
     .isEmpty(),
@@ -65,9 +66,10 @@ apiRouter.get(
     if (handleRequestErrors(req, res)) {
       return;
     }
-    const isAuthorized = isAuthorizedUser(req.user);
     db.getArticleTopics(req.params.publication)
-      .then(topics => topics.filter(topic => !topic.restricted || isAuthorized))
+      .then(topics =>
+        topics.filter(topic => !topic.restricted || isAuthorized(req.user)),
+      )
       .then(topics => res.json(topics));
   },
 );
@@ -79,7 +81,7 @@ apiRouter.get(
  */
 apiRouter.get(
   '/article/:filename',
-  authResolve,
+  maybeAuthenticated,
   check('filename', 'filename is required')
     .not()
     .isEmpty(),
@@ -88,23 +90,21 @@ apiRouter.get(
       return;
     }
     const { filename } = req.params;
-    db.getArticle(filename).then(
-      (topic: ITopic): void => {
-        if (!topic) {
-          return void res.sendStatus(404);
-        }
-        if (topic.restricted && !isAuthorizedUser(req.user)) {
-          return void res.sendStatus(401);
-        }
-        res.json(topic);
-      },
-    );
+    db.getArticle(filename).then((topic: ITopic): void => {
+      if (!topic) {
+        return void res.sendStatus(404);
+      }
+      if (topic.restricted && !isAuthorized(req.user)) {
+        return void res.sendStatus(401);
+      }
+      res.json(topic);
+    });
   },
 );
 
 apiRouter.get(
   '/search',
-  authResolve,
+  maybeAuthenticated,
   check('term', 'term is required')
     .not()
     .isEmpty(),
@@ -113,7 +113,7 @@ apiRouter.get(
       return;
     }
     const { term } = req.query;
-    db.searchWord(term, isAuthorizedUser(req.user))
+    db.searchWord(term, isAuthorized(req.user))
       .then((lemmas: any[]) => res.json(lemmas))
       .catch(err => res.status(500).json({ error: err.message }));
   },

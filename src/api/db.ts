@@ -5,7 +5,7 @@ import AutoComplete from '../models/AutoComplete';
 import Lemma, { ILemma } from '../models/Lemma';
 import Topic, { ITopicDocument } from '../models/Topic';
 import Word from '../models/Word';
-import { extractLemmaWords } from './words-extractor';
+import { extractLemmaWords } from './word-extractor';
 
 const REBUILD_DELAY = 2000;
 const debouncedRebuildAutoCompleteCollection = debounce(
@@ -21,8 +21,8 @@ async function insertWords(
   const inserts: any[] = [];
   lemmas.forEach((lemma, index) => {
     const lemmaId = lemmaIds[index];
-    const { nl, ar } = extractLemmaWords(lemma);
-    nl.forEach(word =>
+    const { nativeWords, foreignWords } = extractLemmaWords(lemma);
+    nativeWords.forEach(word =>
       inserts.push({
         insertOne: {
           document: {
@@ -36,7 +36,7 @@ async function insertWords(
         },
       }),
     );
-    ar.forEach(word =>
+    foreignWords.forEach(word =>
       inserts.push({
         insertOne: {
           document: {
@@ -97,15 +97,15 @@ async function rebuildAutoCompleteCollection() {
     const lemmas = await Lemma.find({});
     const inserts: Map<string, {}> = new Map();
     lemmas.forEach(lemma => {
-      const { nl, ar } = extractLemmaWords(lemma);
-      nl.forEach(word =>
+      const { nativeWords, foreignWords } = extractLemmaWords(lemma);
+      nativeWords.forEach(word =>
         inserts.set(`${word}:nl`, {
           insertOne: {
             document: { word, lang: 'nl' },
           },
         }),
       );
-      ar.forEach(word =>
+      foreignWords.forEach(word =>
         inserts.set(`${word}:ar`, {
           insertOne: {
             document: { word, lang: 'ar' },

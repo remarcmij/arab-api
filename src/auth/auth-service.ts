@@ -3,9 +3,10 @@ import { compose } from 'compose-middleware';
 import { NextFunction, Request, Response } from 'express';
 import expressJwt from 'express-jwt';
 import jwt from 'jsonwebtoken';
-import { IUserDocument, User } from '../models/User';
+import User, { IUser } from '../models/User';
+import { assertEnvVar } from '../util';
 
-const EXPIRES_IN_SECONDS = 30 * 24 * 60 * 60; // days * hours/day * minutes/hour * seconds/minute
+const EXPIRES_IN_SECONDS = 30 * 24 * 60 * 60; // 30 days * hours * minutes * seconds
 
 const JWT_SECRET = process.env.JWT_SECRET || 'my_secret';
 
@@ -19,19 +20,19 @@ const validateOptionalJwt = expressJwt({
   credentialsRequired: false,
 });
 
-export const authResolve = compose([
+export const maybeAuthenticated = compose([
   validateOptionalJwt,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (!req.user) {
-        req.user = { status: 'visitor' };
-        return next();
+      if (req.user) {
+        // Try and replace JWT user info with full info
+        // from database.
+        const user = await User.findById(req.user.id);
+        if (user == null) {
+          return void res.status(401).json({ message: `User doesn't exist` });
+        }
+        req.user = user;
       }
-      const user = await User.findById(req.user.id);
-      if (!user) {
-        return void res.status(401).json({ message: `User doesn't exist` });
-      }
-      req.user = user;
       next();
     } catch (err) {
       return void res.status(401).json({ message: 'Invalid token' });
@@ -43,7 +44,7 @@ export const isAuthenticated = compose([
   validateJwt,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const user = await User.findById(req.user.id);
+      const user = await User.findById(req.user!.id);
       if (!user) {
         return res.status(401).json({ message: `User doesn't exist` });
       }
@@ -61,20 +62,10 @@ export const isAuthenticated = compose([
   },
 ]);
 
-export const isUser = compose([
+export const isAdmin = compose([
   isAuthenticated,
   (req: Request, res: Response, next: NextFunction) => {
-    if (req.user.status !== 'user') {
-      return res.status(403).json({ message: 'Forbidden' });
-    }
-    next();
-  },
-]);
-
-export const isAdmin = compose([
-  isUser,
-  (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user.isAdmin) {
+    if (!req.user!.isAdmin) {
       return res.status(403).json({ message: 'Forbidden' });
     }
     next();
@@ -115,11 +106,9 @@ export const sendToken = (req: Request, res: Response) => {
   res.json({ token });
 };
 
-export const sendMail = (user: IUserDocument) => {
-  if (process.env.SENDGRID_API_KEY == null) {
-    throw new Error('Missing SendGrid API key environment variable');
-  }
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+export const sendMail = (user: IUser) => {
+  assertEnvVar('SENDGRID_API_KEY');
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
   /* cSpell: disable */
   const msg = {
     // to: process.env.ADMIN_EMAIL,

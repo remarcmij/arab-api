@@ -5,7 +5,7 @@ export interface IAutoComplete {
   lang: string;
 }
 
-const AutoCompleteSchema = new Schema<IAutoComplete>({
+const autoCompleteSchema = new Schema<IAutoComplete>({
   word: { type: String, required: true, index: true },
   lang: { type: String, required: true },
 });
@@ -14,5 +14,5 @@ export interface IAutoCompleteDocument extends Document, IAutoComplete {}
 
 export default mongoose.model<IAutoCompleteDocument>(
   'AutoComplete',
-  AutoCompleteSchema,
+  autoCompleteSchema,
 );

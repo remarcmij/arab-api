@@ -11,7 +11,7 @@ export interface ITopic {
   sections: string[];
 }
 
-const TopicSchema = new Schema<ITopic>({
+const topicSchema = new Schema<ITopic>({
   filename: { type: String, required: true, unique: true },
   publication: { type: String, required: true },
   article: { type: String, required: true },
@@ -24,4 +24,4 @@ const TopicSchema = new Schema<ITopic>({
 
 export interface ITopicDocument extends ITopic, Document {}
 
-export default mongoose.model<ITopicDocument>('Topic', TopicSchema);
+export default mongoose.model<ITopicDocument>('Topic', topicSchema);

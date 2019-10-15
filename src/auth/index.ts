@@ -3,7 +3,7 @@ import { body, validationResult } from 'express-validator/check';
 import passport from 'passport';
 import logger from '../config/logger';
 import * as C from '../constants';
-import { encryptPassword, User } from '../models/User';
+import User, { encryptPassword } from '../models/User';
 import {
   isAuthenticated,
   sendMail,
@@ -105,6 +105,9 @@ authRouter.post(
 
 authRouter.get('/', isAuthenticated, async (req: Request, res: Response) => {
   try {
+    if (!req.user) {
+      return res.sendStatus(401);
+    }
     const user = await User.findOne({ email: req.user.email }).select(
       '-hashedPassword',
     );

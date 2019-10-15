@@ -1,23 +1,31 @@
 import bcrypt from 'bcryptjs';
 import mongoose, { Document, Schema } from 'mongoose';
 
-type Status = 'visitor' | 'signed-up' | 'user';
+type UserStatus = 'visitor' | 'registered' | 'authorized';
 export type Provider = 'local' | 'google' | 'facebook';
 
 export interface IUser {
+  id?: any;
   name: string;
   email: string;
-  photo: string;
-  status: Status;
+  photo?: string;
   hashedPassword?: string;
   provider: Provider;
+  status: UserStatus;
   verified: boolean;
   isAdmin: boolean;
   created?: Date;
   lastAccess?: Date;
 }
 
-const UserSchema = new Schema<IUser>({
+declare global {
+  namespace Express {
+    // tslint:disable-next-line: no-empty-interface interface-name
+    interface User extends IUser {}
+  }
+}
+
+const userSchema = new Schema<IUser>({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   photo: { type: String, required: false },
@@ -30,20 +38,19 @@ const UserSchema = new Schema<IUser>({
   lastAccess: { type: Date, default: Date.now },
 });
 
-const makeSalt = () => bcrypt.genSalt(10);
-
 export const encryptPassword = async (password: string) => {
-  const salt = await makeSalt();
+  const salt = await bcrypt.genSalt(10);
   return bcrypt.hash(password, salt);
 };
 
 export const validatePassword = (password: string, hashedPassword: string) =>
   bcrypt.compare(password, hashedPassword);
 
-export interface IUserDocument extends Document, IUser {}
-
-export const User = mongoose.model<IUserDocument>('User', UserSchema);
-
-export const isAuthorizedUser = (user: IUser) => user.status === 'user';
+export const isAuthorized = (user: IUser | undefined) =>
+  !!user && user.status === 'authorized';
 
 export const isAdmin = (user: IUser) => user.isAdmin;
+
+export interface IUserDocument extends Document, IUser {}
+
+export default mongoose.model<IUserDocument>('User', userSchema);

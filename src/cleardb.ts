@@ -4,7 +4,11 @@ import Lemma from './models/Lemma';
 import Topic from './models/Topic';
 import Word from './models/Word';
 
-mongoose.connect('mongodb://localhost/arab', { useNewUrlParser: true });
+mongoose.connect('mongodb://localhost/arab', {
+  useNewUrlParser: true,
+  useCreateIndex: true,
+  useUnifiedTopology: true,
+});
 const { connection } = mongoose;
 connection.on('error', err =>
   console.error(`connection error: ${err.message}`),

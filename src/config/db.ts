@@ -1,16 +1,15 @@
 import mongoose from 'mongoose';
 import logger from '../config/logger';
+import { assertEnvVar } from '../util';
 import seed from './seed';
 
 const connectDB = async () => {
   try {
-    if (process.env.MONGO_CONNECT_STRING == null) {
-      throw new Error('Missing MongoDB connect string environment variable');
-    }
-
-    await mongoose.connect(process.env.MONGO_CONNECT_STRING, {
+    assertEnvVar('MONGO_CONNECT_STRING');
+    await mongoose.connect(process.env.MONGO_CONNECT_STRING!, {
       useNewUrlParser: true,
       useCreateIndex: true,
+      useUnifiedTopology: true,
     });
     logger.info('MongoDB connected');
     await seed();

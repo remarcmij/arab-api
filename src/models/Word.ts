@@ -9,7 +9,7 @@ export interface IWord {
   topic: Schema.Types.ObjectId;
 }
 
-const WordSchema = new Schema<IWord>({
+const wordSchema = new Schema<IWord>({
   word: { type: String, required: true, index: true },
   lang: { type: String, required: true },
   filename: { type: String, required: true },
@@ -20,4 +20,4 @@ const WordSchema = new Schema<IWord>({
 
 export interface IWordDocument extends Document, IWord {}
 
-export default mongoose.model<IWordDocument>('Word', WordSchema);
+export default mongoose.model<IWordDocument>('Word', wordSchema);
