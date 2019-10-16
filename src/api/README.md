@@ -5,14 +5,14 @@ The content for this application consists of a collection of markdown files, eac
 The application content is subdivided into **publications**. Each publication (e.g. a text book) consists:
 
 - An index file containing meta data describing the publication itself, e.g. title, copyright owner.
-- A collection of content files, e.g. one per book chapter, containing the subject material.
+- A collection of chapter files, e.g. one per book chapter, containing the subject material.
 
 The grouping into publications is established through a file naming convention, as follows:
 
 | Filename | Description |
 | -------- | ----------- |
 | `<publication>.index.md` | The index file of the publication. |
-| `<publication>.<chapter>.md` | A content file for a particular chapter of the publication. |
+| `<publication>.<chapter>.md` | A chapter file from the publication. |
 
 **NPM Packages used:**
 
@@ -41,9 +41,9 @@ restricted: false
 ---
 ```
 
-## Content Files
+## Chapter Files
 
-Content files contain a YAML header followed by markdown content.
+Chapter files contain a YAML header followed by markdown content.
 
 ### YAML Header
 
@@ -53,8 +53,22 @@ Content files contain a YAML header followed by markdown content.
 | subtitle | string | No | An optional subtitle. |
 | restricted | boolean | No | Determines whether the chapter is restricted to registered users. Default: `true` | 
 
-> Notes: 
-> 1. Content files that have `restricted` set to `false` but that are part of a restricted publication will not be accessible through the frontend for non-registered users as the publication itself will not be listed on the frontend.
-> 2. A chapter that is marked as `restricted` will not be accessible to non-registered users even if its corresponding publication is unrestricted.
+Notes: 
+1. Chapter files that have their `restricted` value set to `false` but that are part of a restricted publication will not be accessible through the frontend for non-registered users as the publication itself will not be listed on the frontend.
+2. A chapter that is marked as `restricted` will not be accessible to non-registered users even if its corresponding publication is unrestricted.
 
-When loading a new or updates content file, the backend scans its markdown content section for 'lemma tables'. Lemma tables are text tables in markdown format
+When loading a new or updated chapter files, the backend scans its markdown content section for 'lemma tables'. Lemma tables are text tables in markdown format with a predefined header format and two required columns (`nl` and `ar`) and an optional third `roman` column. Example:
+
+```
+nl | ar | roman
+---|---:|------
+voor (vz. van plaats) | أَمَامَ | ʾamāma
+onthouden, bewaren, uit het hoofd leren | حَفِظَ | ḥafiẓa
+```
+
+| Column header | Description |
+| :-----------: | ----------- |
+| nl | Dutch text |
+| ar | Arabic translation |
+| roman | Romanization of the Arabic translation |
+

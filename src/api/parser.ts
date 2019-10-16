@@ -1,25 +1,9 @@
 import { ILemma } from '../models/Lemma';
-import lang from './lang/lang';
 
-enum Language {
-  Native = 'native',
-  Foreign = 'foreign',
-  Roman = 'roman',
-}
+// Matches: nl | ar | rom
+const TABLE_HEADER_REGEXP = /^\s*nl\s*\|\s*ar\s*(?:\|\s*roman\s*)$/;
 
-interface IColumnDef {
-  header: string;
-  field: Language;
-  required: boolean;
-}
-
-const COLUMN_DEFS: IColumnDef[] = [
-  { header: 'nl', field: Language.Native, required: true },
-  { header: 'ar', field: Language.Foreign, required: true },
-  { header: 'rom', field: Language.Roman, required: false },
-];
-
-const TABLE_HEADER_REGEXP = /^[a-z]+(?: \| [a-z]+)+$/;
+// Example match target: ---|---:|----
 const TABLE_DIVIDER_REGEXP = /^[ -:|]+$/;
 
 function next(iter: IterableIterator<string>) {
@@ -27,23 +11,7 @@ function next(iter: IterableIterator<string>) {
   return { done: item.done, value: item.done ? '' : item.value.trim() };
 }
 
-function extractCells(line: string, expectedCount = 0) {
-  const cells = line.trim().split(/ *\| */);
-  if (expectedCount !== 0 && cells.length !== expectedCount) {
-    throw new Error(
-      `Expected ${expectedCount} cells but got ${cells.length}: ${line}.`,
-    );
-  }
-  return cells;
-}
-
-function parseLemmaTable(
-  iter: IterableIterator<string>,
-  columnNames: Language[],
-  sectionIndex: number,
-) {
-  const lemmas: ILemma[] = [];
-
+function parseLemmaTable(iter: IterableIterator<string>, sectionIndex: number) {
   let item = next(iter);
   if (item.done) {
     throw new Error('Unexpected end of input');
@@ -55,38 +23,30 @@ function parseLemmaTable(
     );
   }
 
+  const lemmas: ILemma[] = [];
   item = next(iter);
 
   while (!item.done && item.value !== '') {
-    const values = extractCells(item.value, columnNames.length);
-    const newLemma = values.reduce(
-      (lemma, value, index) => {
-        lemma[COLUMN_DEFS[index].field] = value;
-        return lemma;
-      },
-      { sectionIndex } as ILemma,
-    );
-    lemmas.push(newLemma);
+    const cells = item.value.trim().split(/ *\| */);
+    if (cells.length < 2) {
+      throw new Error(`Invalid lemma: ${item.value}`);
+    }
+    const myLemma = { sectionIndex } as ILemma;
+    myLemma.native = cells[0];
+    myLemma.foreign = cells[1];
+    if (cells.length >= 3) {
+      myLemma.roman = cells[2];
+    }
+    lemmas.push(myLemma);
     item = next(iter);
   }
+
   return lemmas;
 }
 
-function validateColumnNames(headers: string[]) {
-  headers.forEach((header, index) => {
-    if (COLUMN_DEFS[index].header !== header) {
-      throw new Error(`Unrecognized field name: '${header}'.`);
-    }
-  });
-}
-
-function getLineIterator(body: string) {
-  const lines = body.trim().split('\n');
-  return lines[Symbol.iterator]();
-}
-
 export function parseBody(body: string) {
-  const iter = getLineIterator(body);
+  const lines = body.trim().split('\n');
+  const iter = lines[Symbol.iterator]();
   const sections: string[] = [];
   let lemmas: ILemma[] = [];
   let sectionText = '';
@@ -94,11 +54,7 @@ export function parseBody(body: string) {
 
   while (!item.done) {
     if (TABLE_HEADER_REGEXP.test(item.value)) {
-      const columnNames = extractCells(item.value) as Language[];
-      validateColumnNames(columnNames);
-      lemmas = lemmas.concat(
-        parseLemmaTable(iter, columnNames, sections.length),
-      );
+      lemmas = lemmas.concat(parseLemmaTable(iter, sections.length));
       if (sectionText) {
         sections.push(sectionText);
         sectionText = '';

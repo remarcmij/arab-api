@@ -1,4 +1,3 @@
-import { tsConstructorType } from '@babel/types';
 import crypto from 'crypto';
 import fm from 'front-matter';
 import fs from 'fs';
@@ -14,7 +13,9 @@ import TaskQueue from './TaskQueue';
 const glob = util.promisify(_glob);
 const CONCURRENCY = 2;
 
-const taskQueue = new TaskQueue<void>(CONCURRENCY);
+const taskQueue = new TaskQueue(CONCURRENCY, () => {
+  db.rebuildAutoCompletions();
+});
 
 export interface IWords {
   nl: string[];
@@ -113,7 +114,7 @@ export function watchContent() {
   const refreshContentDebounced = debounce(syncContent, 5000, {
     trailing: true,
   });
-  fs.watch(CONTENT_DIR, async (event, filename) => {
+  fs.watch(CONTENT_DIR, () => {
     refreshContentDebounced();
   });
 }

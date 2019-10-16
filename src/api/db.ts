@@ -1,4 +1,3 @@
-import debounce from 'lodash.debounce';
 import { Schema } from 'mongoose';
 import logger from '../config/logger';
 import AutoComplete from '../models/AutoComplete';
@@ -6,12 +5,6 @@ import Lemma, { ILemma } from '../models/Lemma';
 import Topic, { ITopicDocument } from '../models/Topic';
 import Word from '../models/Word';
 import { extractLemmaWords } from './word-extractor';
-
-const REBUILD_DELAY = 2000;
-const debouncedRebuildAutoCompleteCollection = debounce(
-  rebuildAutoCompleteCollection,
-  REBUILD_DELAY,
-);
 
 async function insertWords(
   lemmas: ILemma[],
@@ -87,11 +80,10 @@ export async function insertTopic(doc: any) {
 
   if (article !== 'index') {
     await insertLemmas(topicDoc, lemmas);
-    await debouncedRebuildAutoCompleteCollection();
   }
 }
 
-async function rebuildAutoCompleteCollection() {
+export async function rebuildAutoCompletions() {
   try {
     await AutoComplete.deleteMany({});
     const lemmas = await Lemma.find({});
