@@ -72,3 +72,4 @@ onthouden, bewaren, uit het hoofd leren | حَفِظَ | ḥafiẓa
 | ar | Arabic translation |
 | roman | Romanization of the Arabic translation |
 
+The first two columns of a lemma table (i.e., `nl` and `ar`) are indexed and searchable through the frontend.
