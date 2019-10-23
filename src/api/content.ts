@@ -6,6 +6,8 @@ import debounce from 'lodash.debounce';
 import path from 'path';
 import util from 'util';
 import logger from '../config/logger';
+import { ILemma } from '../models/lemma';
+import { ITopic } from '../models/topic';
 import * as db from './db';
 import { parseBody } from './parser';
 import TaskQueue from './TaskQueue';
@@ -17,26 +19,10 @@ const taskQueue = new TaskQueue(CONCURRENCY, () => {
   db.rebuildAutoCompletions();
 });
 
-export interface IWords {
-  nl: string[];
-  ar: string[];
-}
-
-export interface IAttributes {
-  id?: number;
-  publication?: string;
-  article?: string;
-  filename?: string;
-  sha?: string;
+interface IAttributes {
   title: string;
   subtitle?: string;
   restricted: boolean;
-  sections?: string[];
-}
-
-export interface IFrontMatterFile {
-  attributes: IAttributes;
-  body: string;
 }
 
 const CONTENT_DIR = path.join(
@@ -59,46 +45,45 @@ async function loadDocument(filePath: string) {
 
     if (!article) {
       throw new Error(
-        `Expected filename format <publication>.<article> but got: ${filename}`,
+        `${filePath}\n>>> expected filename format <publication>.<article>.md`,
       );
     }
 
-    const docText = await fs.promises.readFile(filePath, 'utf8');
+    const text = await fs.promises.readFile(filePath, 'utf8');
 
-    const sha = computeSha(docText);
-    const docSha = await db.getTopicSha(filename);
-
-    if (sha === docSha) {
+    const computedSha = computeSha(text);
+    const storedSha = await db.getTopicSha(filename);
+    if (computedSha === storedSha) {
       logger.info(`unchanged: ${filename}`);
       return;
     }
 
     logger.debug(`loading: ${filename}`);
 
-    await db.deleteTopic(filename);
+    const fmResult = fm<IAttributes>(text);
 
-    const doc: IFrontMatterFile = fm<IAttributes>(docText);
-
-    const attr = {
-      ...doc.attributes,
+    const topic: ITopic = {
+      ...fmResult.attributes,
       article,
       filename,
       publication,
-      sha,
+      sections: [],
+      sha: computedSha,
     };
 
-    let insertDoc: any;
-
+    let lemmas: ILemma[];
     if (article === 'index') {
-      insertDoc = { ...attr };
+      lemmas = [];
     } else {
-      const { sections, lemmas } = parseBody(doc.body);
-      insertDoc = { ...attr, lemmas, sections };
+      const result = parseBody(fmResult.body);
+      topic.sections = result.sections;
+      lemmas = result.lemmas;
     }
 
-    db.insertTopic(insertDoc);
+    await db.deleteTopic(filename);
+    await db.insertTopic(topic, lemmas);
   } catch (err) {
-    logger.error(err);
+    logger.error(err.message);
   }
 }
 

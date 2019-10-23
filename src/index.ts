@@ -58,7 +58,7 @@ const docRoot = path.resolve(__dirname, clientPath);
       content.watchContent();
       logger.info(`server started at http://localhost:${PORT}`);
     } catch (err) {
-      logger.error(`error stating server: ${err.message}`);
+      logger.error(`error starting server: ${err.message}`);
     }
   });
 

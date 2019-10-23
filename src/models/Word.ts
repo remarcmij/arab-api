@@ -1,12 +1,16 @@
-import mongoose, { Document, Schema, SchemaType } from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
+import { Language } from '../Language';
 
-export interface IWord {
+export interface IWord<
+  TLemma = Schema.Types.ObjectId,
+  TTopic = Schema.Types.ObjectId
+> {
   word: string;
-  lang: string;
+  lang: Language;
   filename: string;
   order: number;
-  lemma: Schema.Types.ObjectId;
-  topic: Schema.Types.ObjectId;
+  lemma: TLemma;
+  topic: TTopic;
 }
 
 const wordSchema = new Schema<IWord>({

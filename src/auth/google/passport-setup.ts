@@ -3,7 +3,12 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import logger from '../../config/logger';
-import User, { IUser, IUserDocument } from '../../models/User';
+import User, {
+  AuthProvider,
+  AuthStatus,
+  IUser,
+  IUserDocument,
+} from '../../models/User';
 import { assertEnvVar } from '../../util';
 import { sendMail } from '../auth-service';
 
@@ -38,9 +43,9 @@ async function verify(
       const userInfo: IUser = {
         email,
         name: displayName,
-        status: 'registered',
+        status: AuthStatus.Registered,
         photo,
-        provider: 'google',
+        provider: AuthProvider.Google,
         verified: true,
         isAdmin: false,
       };

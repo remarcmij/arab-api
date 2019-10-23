@@ -1,4 +1,9 @@
-import User, { encryptPassword, IUser } from '../models/User';
+import User, {
+  AuthProvider,
+  AuthStatus,
+  encryptPassword,
+  IUser,
+} from '../models/User';
 import { assertEnvVar } from '../util';
 import logger from './logger';
 
@@ -7,20 +12,21 @@ export default async () => {
     assertEnvVar('ADMIN_EMAIL');
     assertEnvVar('ADMIN_PASSWORD');
 
-    const user = await User.findOne({ email: process.env.ADMIN_EMAIL });
+    const user = await User.findOne({ email: process.env.ADMIN_EMAIL! });
 
     if (!user) {
       const hashedPassword = await encryptPassword(process.env.ADMIN_PASSWORD!);
-      await User.create({
-        provider: 'local',
-        status: 'authorized',
+      const adminUser: IUser = {
+        provider: AuthProvider.Local,
+        status: AuthStatus.Authorized,
         name: 'Admin',
-        email: process.env.ADMIN_EMAIL,
+        email: process.env.ADMIN_EMAIL!,
         hashedPassword,
         verified: true,
         isAdmin: true,
-      } as IUser);
-      logger.info('created admin account');
+      };
+      await User.create(adminUser);
+      logger.info('created admin user');
     }
   } catch (err) {
     logger.error(err.message);

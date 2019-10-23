@@ -1,8 +1,9 @@
 import mongoose, { Document, Schema } from 'mongoose';
+import { Language } from '../Language';
 
 export interface IAutoComplete {
   word: string;
-  lang: string;
+  lang: Language;
 }
 
 const autoCompleteSchema = new Schema<IAutoComplete>({
