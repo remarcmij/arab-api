@@ -63,9 +63,22 @@ async function insertLemmas(topicDoc: ITopicDocument, lemmas: ILemma[]) {
   await insertWords(lemmas, insertedIds, topicDoc);
 }
 
+export async function deleteTopic(filename: string) {
+  const topic = await Topic.findOne({ filename });
+  if (topic) {
+    await Promise.all([
+      Word.deleteMany({ topic: topic._id }),
+      Lemma.deleteMany({ topic: topic._id }),
+      Topic.deleteOne({ filename }),
+    ]);
+    logger.debug(`deleted topic: ${filename}`);
+  }
+}
+
 export async function insertTopic(topic: ITopic, lemmas: ILemma[]) {
   const topicDoc = await new Topic(topic).save();
   await insertLemmas(topicDoc, lemmas);
+  logger.debug(`inserted topic: ${topic.filename}`);
 }
 
 export async function rebuildAutoCompletions() {
@@ -93,17 +106,6 @@ export async function rebuildAutoCompletions() {
 
 export function getTopicSha(filename: string) {
   return Topic.findOne({ filename }).then(doc => (doc ? doc.sha : null));
-}
-
-export async function deleteTopic(filename: string) {
-  const topic = await Topic.findOne({ filename });
-  if (topic) {
-    await Promise.all([
-      Word.deleteMany({ topic: topic._id }),
-      Lemma.deleteMany({ topic: topic._id }),
-      Topic.deleteOne({ filename }),
-    ]);
-  }
 }
 
 export function getIndexTopics() {

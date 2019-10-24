@@ -1,11 +1,13 @@
-import { transformFile } from '@babel/core';
+import { Language } from '../Language';
 import { ILemma } from '../models/Lemma';
 
 // Matches: nl | ar | rom
-const TABLE_HEADER_REGEXP = /^\s*nl\s*\|\s*ar\s*(?:\|\s*roman\s*)$/;
+const tableHeaderRegexp = new RegExp(
+  String.raw`^\s*${Language.Native}\s*\|\s*${Language.Foreign}\s*(?:\|\s*roman\s*)$`,
+);
 
 // Example match target: ---|---:|----
-const TABLE_DIVIDER_REGEXP = /^[ -:|]+$/;
+const tableDividerRegexp = /^[ -:|]+$/;
 
 const isBlankLine = (line: string) => /^\s*$/.test(line);
 const splitByVerticalBar = (line: string) =>
@@ -17,7 +19,7 @@ function parseLemmaTable(iter: IterableIterator<string>, sectionIndex: number) {
     throw new Error('Unexpected end of input');
   }
 
-  if (!TABLE_DIVIDER_REGEXP.test(item.value)) {
+  if (!tableDividerRegexp.test(item.value)) {
     throw new Error(
       `Expected a markdown table divider but found: '${item.value}'`,
     );
@@ -31,11 +33,10 @@ function parseLemmaTable(iter: IterableIterator<string>, sectionIndex: number) {
     if (cols.length < 2) {
       throw new Error(`Invalid lemma: ${item.value}`);
     }
-    const myLemma = { sectionIndex } as ILemma;
-    myLemma.native = cols[0];
-    myLemma.foreign = cols[1];
-    if (cols.length >= 3) {
-      myLemma.roman = cols[2];
+    const [native, foreign, roman] = cols;
+    const myLemma = { sectionIndex, native, foreign } as ILemma;
+    if (roman) {
+      myLemma.roman = roman;
     }
     lemmas.push(myLemma);
     item = iter.next();
@@ -45,7 +46,8 @@ function parseLemmaTable(iter: IterableIterator<string>, sectionIndex: number) {
 }
 
 export function parseBody(body: string) {
-  const lines = body.trim().split('\n');
+  const platformIndependentLineSeparator = /\r?\n/;
+  const lines = body.trim().split(platformIndependentLineSeparator);
   const iter = lines[Symbol.iterator]();
   const sections: string[] = [];
   let lemmas: ILemma[] = [];
@@ -53,7 +55,7 @@ export function parseBody(body: string) {
   let item = iter.next();
 
   while (!item.done) {
-    if (TABLE_HEADER_REGEXP.test(item.value)) {
+    if (tableHeaderRegexp.test(item.value)) {
       lemmas = lemmas.concat(parseLemmaTable(iter, sections.length));
       sections.push(sectionText);
       sectionText = '';

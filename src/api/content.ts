@@ -58,7 +58,7 @@ async function loadDocument(filePath: string) {
       return;
     }
 
-    logger.debug(`loading: ${filename}`);
+    logger.info(`loading: ${filename}`);
 
     const fmResult = fm<IAttributes>(text);
 

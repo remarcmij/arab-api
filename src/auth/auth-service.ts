@@ -40,6 +40,10 @@ export const maybeAuthenticated = compose([
   },
 ]);
 
+interface IError extends Error {
+  status?: number;
+}
+
 export const isAuthenticated = compose([
   validateJwt,
   async (req: Request, res: Response, next: NextFunction) => {
@@ -54,8 +58,8 @@ export const isAuthenticated = compose([
       return res.status(500).json(err);
     }
   },
-  async (err: any, req: Request, res: Response, next: NextFunction) => {
-    if (err.name === 'UnauthorizedError') {
+  async (err: IError, req: Request, res: Response, next: NextFunction) => {
+    if (typeof err.status !== 'undefined') {
       return res.status(err.status).json(err);
     }
     return res.status(500).json(err);
