@@ -4,11 +4,12 @@
   "subtitle": "",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
-    "build-watch": "tsc --watch",
+    "build": "tsc -P ./tsconfig.json",
+    "build-watch": "tsc -P ./tsconfig.json --watch",
     "start": "node dist/index.js",
     "server": "cross-env NODE_ENV=development nodemon --watch ./dist dist/index.js",
     "client": "npm start --prefix arab-client",
+    "dev-server": "concurrently \"npm run build-watch\" \"npm run server\"",
     "dev": "concurrently \"npm run build-watch\" \"npm run server\" \"npm run client\"",
     "cleardb": "node dist/cleardb",
     "test": "jest"
