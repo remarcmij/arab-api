@@ -7,7 +7,7 @@ const tableHeaderRegexp = new RegExp(
 );
 
 // Example match target: ---|---:|----
-const tableDividerRegexp = /^[ -:|]+$/;
+const tableDividerRegexp = /^[- :|]+$/;
 
 const isBlankLine = (line: string) => /^\s*$/.test(line);
 const splitByVerticalBar = (line: string) =>
