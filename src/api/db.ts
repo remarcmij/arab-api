@@ -1,9 +1,10 @@
 import { Schema } from 'mongoose';
 import logger from '../config/logger';
-import AutoComplete from '../models/AutoComplete';
+import { Language } from '../Language';
+import AutoComplete, { IAutoComplete } from '../models/AutoComplete';
 import Lemma, { ILemma } from '../models/Lemma';
-import Topic, { ITopicDocument } from '../models/Topic';
-import Word from '../models/Word';
+import Topic, { ITopic, ITopicDocument } from '../models/Topic';
+import Word, { IWord } from '../models/Word';
 import { extractLemmaWords } from './word-extractor';
 
 async function insertWords(
@@ -11,39 +12,37 @@ async function insertWords(
   lemmaIds: Schema.Types.ObjectId[],
   topicDoc: ITopicDocument,
 ) {
-  const inserts: any[] = [];
+  const inserts: Array<{ insertOne: { document: IWord } }> = [];
+
   lemmas.forEach((lemma, index) => {
     const lemmaId = lemmaIds[index];
     const { nativeWords, foreignWords } = extractLemmaWords(lemma);
-    nativeWords.forEach(word =>
-      inserts.push({
-        insertOne: {
-          document: {
-            word,
-            lang: 'nl',
-            filename: topicDoc.filename,
-            order: index,
-            lemma: lemmaId,
-            topic: topicDoc._id,
-          },
-        },
-      }),
-    );
-    foreignWords.forEach(word =>
-      inserts.push({
-        insertOne: {
-          document: {
-            word,
-            lang: 'ar',
-            filename: topicDoc.filename,
-            order: index,
-            lemma: lemmaId,
-            topic: topicDoc._id,
-          },
-        },
-      }),
-    );
+
+    nativeWords.forEach(word => {
+      const document: IWord = {
+        word,
+        lang: Language.Native,
+        filename: topicDoc.filename,
+        order: index,
+        lemma: lemmaId,
+        topic: topicDoc._id,
+      };
+      inserts.push({ insertOne: { document } });
+    });
+
+    foreignWords.forEach(word => {
+      const document: IWord = {
+        word,
+        lang: Language.Foreign,
+        filename: topicDoc.filename,
+        order: index,
+        lemma: lemmaId,
+        topic: topicDoc._id,
+      };
+      inserts.push({ insertOne: { document } });
+    });
   });
+
   return Word.bulkWrite(inserts);
 }
 
@@ -64,23 +63,22 @@ async function insertLemmas(topicDoc: ITopicDocument, lemmas: ILemma[]) {
   await insertWords(lemmas, insertedIds, topicDoc);
 }
 
-export async function insertTopic(doc: any) {
-  const { filename, sha, title, subtitle, restricted, sections, lemmas } = doc;
-  const [publication, article] = filename.split('.');
-  const topicDoc = await new Topic({
-    filename,
-    publication,
-    article,
-    sha,
-    title,
-    subtitle,
-    restricted,
-    sections,
-  }).save();
-
-  if (article !== 'index') {
-    await insertLemmas(topicDoc, lemmas);
+export async function deleteTopic(filename: string) {
+  const topic = await Topic.findOne({ filename });
+  if (topic) {
+    await Promise.all([
+      Word.deleteMany({ topic: topic._id }),
+      Lemma.deleteMany({ topic: topic._id }),
+      Topic.deleteOne({ filename }),
+    ]);
+    logger.debug(`deleted topic: ${filename}`);
   }
+}
+
+export async function insertTopic(topic: ITopic, lemmas: ILemma[]) {
+  const topicDoc = await new Topic(topic).save();
+  await insertLemmas(topicDoc, lemmas);
+  logger.debug(`inserted topic: ${topic.filename}`);
 }
 
 export async function rebuildAutoCompletions() {
@@ -90,20 +88,14 @@ export async function rebuildAutoCompletions() {
     const inserts: Map<string, {}> = new Map();
     lemmas.forEach(lemma => {
       const { nativeWords, foreignWords } = extractLemmaWords(lemma);
-      nativeWords.forEach(word =>
-        inserts.set(`${word}:nl`, {
-          insertOne: {
-            document: { word, lang: 'nl' },
-          },
-        }),
-      );
-      foreignWords.forEach(word =>
-        inserts.set(`${word}:ar`, {
-          insertOne: {
-            document: { word, lang: 'ar' },
-          },
-        }),
-      );
+      nativeWords.forEach(word => {
+        const document: IAutoComplete = { word, lang: Language.Native };
+        inserts.set(`${word}:${Language.Native}`, { insertOne: { document } });
+      });
+      foreignWords.forEach(word => {
+        const document: IAutoComplete = { word, lang: Language.Foreign };
+        inserts.set(`${word}:${Language.Foreign}`, { insertOne: { document } });
+      });
     });
     await AutoComplete.bulkWrite(Array.from(inserts.values()));
     logger.info('rebuilt auto-complete collection');
@@ -114,17 +106,6 @@ export async function rebuildAutoCompletions() {
 
 export function getTopicSha(filename: string) {
   return Topic.findOne({ filename }).then(doc => (doc ? doc.sha : null));
-}
-
-export async function deleteTopic(filename: string) {
-  const topic = await Topic.findOne({ filename });
-  if (topic) {
-    await Promise.all([
-      Word.deleteMany({ topic: topic._id }),
-      Lemma.deleteMany({ topic: topic._id }),
-      Topic.deleteOne({ filename }),
-    ]);
-  }
 }
 
 export function getIndexTopics() {
@@ -143,15 +124,19 @@ export async function getArticle(filename: string) {
   return topic;
 }
 
+type IWordPopulated = IWord<ILemma, ITopic>;
+
 export async function searchWord(word: string, isAuthorized: boolean) {
-  const results = await Word.find({ word })
+  const results: IWordPopulated[] = await Word.find({ word })
     .sort('filename order')
     .populate('lemma topic')
     .lean();
 
   return results
-    .filter((result: any) => isAuthorized || !result.topic.restricted)
-    .map((result: any) => ({
+    .filter(
+      (result: IWordPopulated) => isAuthorized || !result.topic.restricted,
+    )
+    .map((result: IWordPopulated) => ({
       ...result.lemma,
       title: result.topic.title,
     }));

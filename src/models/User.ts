@@ -1,29 +1,37 @@
 import bcrypt from 'bcryptjs';
 import mongoose, { Document, Schema } from 'mongoose';
 
-type UserStatus = 'visitor' | 'registered' | 'authorized';
-export type Provider = 'local' | 'google' | 'facebook';
+export const enum AuthProvider {
+  Local = 'local',
+  Google = 'google',
+  Facebook = 'facebook',
+}
 
-export interface IUser {
-  id?: any;
-  name: string;
-  email: string;
-  photo?: string;
-  hashedPassword?: string;
-  provider: Provider;
-  status: UserStatus;
-  verified: boolean;
-  isAdmin: boolean;
-  created?: Date;
-  lastAccess?: Date;
+export const enum AuthStatus {
+  Registered = 'registered',
+  Authorized = 'authorized',
 }
 
 declare global {
   namespace Express {
     // tslint:disable-next-line: no-empty-interface interface-name
-    interface User extends IUser {}
+    interface User {
+      id?: any;
+      name: string;
+      email: string;
+      photo?: string;
+      hashedPassword?: string;
+      provider: AuthProvider;
+      status: AuthStatus;
+      verified: boolean;
+      isAdmin: boolean;
+      created?: Date;
+      lastAccess?: Date;
+    }
   }
 }
+
+export type IUser = Express.User;
 
 const userSchema = new Schema<IUser>({
   name: { type: String, required: true },
@@ -46,8 +54,8 @@ export const encryptPassword = async (password: string) => {
 export const validatePassword = (password: string, hashedPassword: string) =>
   bcrypt.compare(password, hashedPassword);
 
-export const isAuthorized = (user: IUser | undefined) =>
-  !!user && user.status === 'authorized';
+export const isAuthorized = (user?: IUser) =>
+  !!user && user.status === AuthStatus.Authorized;
 
 export const isAdmin = (user: IUser) => user.isAdmin;
 
