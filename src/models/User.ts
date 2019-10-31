@@ -1,16 +1,12 @@
 import bcrypt from 'bcryptjs';
-import mongoose, { Document, Schema } from 'mongoose';
-
-export const enum AuthProvider {
-  Local = 'local',
-  Google = 'google',
-  Facebook = 'facebook',
-}
+import { Document, model, Schema } from 'mongoose';
 
 export const enum AuthStatus {
   Registered = 'registered',
   Authorized = 'authorized',
 }
+
+// ref: https://codemoto.io/coding/nodejs/email-verification-node-express-mongodb
 
 declare global {
   namespace Express {
@@ -21,10 +17,9 @@ declare global {
       email: string;
       photo?: string;
       hashedPassword?: string;
-      provider: AuthProvider;
       status: AuthStatus;
-      verified: boolean;
-      isAdmin: boolean;
+      verified?: boolean;
+      isAdmin?: boolean;
       created?: Date;
       lastAccess?: Date;
     }
@@ -39,7 +34,6 @@ const userSchema = new Schema<IUser>({
   photo: { type: String, required: false },
   status: { type: String, required: true },
   hashedPassword: { type: String, required: false },
-  provider: { type: String, required: true },
   verified: { type: Boolean, default: false },
   isAdmin: { type: Boolean, default: false },
   created: { type: Date, default: Date.now },
@@ -61,4 +55,4 @@ export const isAdmin = (user: IUser) => user.isAdmin;
 
 export interface IUserDocument extends Document, IUser {}
 
-export default mongoose.model<IUserDocument>('User', userSchema);
+export default model<IUserDocument>('User', userSchema);

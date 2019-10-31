@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import { Document, model, Schema } from 'mongoose';
 import { Language } from '../Language';
 
 export interface IAutoComplete {
@@ -13,7 +13,4 @@ const autoCompleteSchema = new Schema<IAutoComplete>({
 
 export interface IAutoCompleteDocument extends Document, IAutoComplete {}
 
-export default mongoose.model<IAutoCompleteDocument>(
-  'AutoComplete',
-  autoCompleteSchema,
-);
+export default model<IAutoCompleteDocument>('AutoComplete', autoCompleteSchema);

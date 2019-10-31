@@ -91,16 +91,14 @@ export const setTokenCookie = (req: Request, res: Response) => {
       .json({ message: 'Something went wrong, please try again.' });
   }
   const token = signToken(req.user.id);
-  res.cookie('token', JSON.stringify(token), {
-    maxAge: EXPIRES_IN_SECONDS * 1000,
-  });
+  res.cookie('token', JSON.stringify(token));
 
   const redirectUrl =
     process.env.NODE_ENV === 'production' ? '/' : 'http://localhost:3000';
   res.redirect(redirectUrl);
 };
 
-export const sendToken = (req: Request, res: Response) => {
+export const sendAuthToken = (req: Request, res: Response) => {
   if (!req.user) {
     return res
       .status(404)

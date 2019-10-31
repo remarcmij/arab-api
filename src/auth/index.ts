@@ -1,15 +1,17 @@
+import sgMail from '@sendgrid/mail';
+import crypto from 'crypto';
 import express, { NextFunction, Request, Response } from 'express';
 import { body, validationResult } from 'express-validator/check';
+import { sanitizeBody } from 'express-validator/filter';
 import passport from 'passport';
 import logger from '../config/logger';
 import * as C from '../constants';
-import User, { encryptPassword } from '../models/User';
-import {
-  isAuthenticated,
-  sendMail,
-  sendToken,
-  setTokenCookie,
-} from './auth-service';
+import User, { AuthStatus, encryptPassword, IUser } from '../models/User';
+import VerificationToken, {
+  IVerificationToken,
+} from '../models/VerificationToken';
+import { assertEnvVar } from '../util';
+import { isAuthenticated, sendAuthToken, setTokenCookie } from './auth-service';
 import './google/passport-setup';
 
 const authRouter = express.Router();
@@ -36,13 +38,22 @@ authRouter
 
 authRouter.post(
   '/login',
-  body('email', C.EMAIL_ADDRESS_REQUIRED).isEmail(),
-  body('password', C.PASSWORD_REQUIRED).exists(),
-  (req, res, next) => {
+  [
+    body('email', C.EMAIL_ADDRESS_REQUIRED).isEmail(),
+    sanitizeBody('email').normalizeEmail(),
+    body('password', C.PASSWORD_REQUIRED)
+      .not()
+      .isEmpty(),
+  ],
+  (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
     passport.authenticate('local', (err, user, info) => {
       const error = err || info;
       if (error) {
-        return void res.status(401).json(error);
+        return void res.status(422).json(error);
       }
       if (!user) {
         return void res.status(401).json({
@@ -53,7 +64,7 @@ authRouter.post(
       next();
     })(req, res, next);
   },
-  sendToken,
+  sendAuthToken,
 );
 
 authRouter.post(
@@ -63,6 +74,7 @@ authRouter.post(
       .not()
       .isEmpty(),
     body('email', C.EMAIL_ADDRESS_INVALID).isEmail(),
+    sanitizeBody('email').normalizeEmail(),
     body('password', C.PASSWORD_MIN_LENGTH).isLength({
       min: 8,
     }),
@@ -70,7 +82,7 @@ authRouter.post(
   async (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(422).json({ errors: errors.array() });
     }
 
     try {
@@ -82,26 +94,50 @@ authRouter.post(
       }
 
       const hashedPassword = await encryptPassword(password);
-      user = await User.create({
-        provider: 'local',
-        status: 'signed-up',
+      const newUser: IUser = {
+        status: AuthStatus.Registered,
         name,
         email,
         hashedPassword,
-      });
+      };
+      user = await User.create(newUser);
       req.user = user;
-      logger.info(`new user signed up ${email}`);
-      const [response] = await sendMail(user);
-      if (response.statusCode === 202) {
-        logger.debug('email submitted');
-      }
+
+      const newToken: IVerificationToken = {
+        _userId: user._id,
+        token: crypto.randomBytes(16).toString('hex'),
+      };
+
+      const token = new VerificationToken(newToken);
+      await token.save();
+
+      const link =
+        process.env.NODE_ENV === 'production'
+          ? `https://${req.headers.host}/confirmation`
+          : `http://localhost:3000/confirmation`;
+      const msg = {
+        from: 'noreply@taalmap.nl',
+        to: user.email,
+        subject: 'Account Verification Token',
+        text: `Hello,\n\nPlease verify your account by clicking the link: \n${link}/${token.token}.\n`,
+      };
+
+      assertEnvVar('SENDGRID_API_KEY');
+      sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
+      await sgMail.send(msg);
+      logger.debug(`A verification email has been sent to ${user!.email}.`);
       next();
     } catch (err) {
       logger.error(err.message);
     }
   },
-  sendToken,
+  sendAuthToken,
 );
+
+authRouter.get('/verify/:token', async (req: Request, res: Response) => {
+  console.log('req.params.token :', req.params.token);
+  res.end();
+});
 
 authRouter.get('/', isAuthenticated, async (req: Request, res: Response) => {
   try {
