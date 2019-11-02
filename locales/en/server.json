@@ -1,0 +1,18 @@
+{
+  "verification_email": {
+    "subject": "Account verification",
+    "body": {
+      "title": "Email Confirmation",
+      "greeting": "Hi {{name}}",
+      "opening": "Thanks for your registration!",
+      "prompt": "Please verify your account by clicking:",
+      "buttonText": "Here",
+      "closing": "Kind Regards,<br>Team Study Buddy Arabic"
+    }
+  },
+  "account_verified": "Your account has been verified. Please log in.",
+  "already_verified": "This user has already been verified.",
+  "token_expired": "The verification link has expired.",
+  "user_not_found": "We were unable to find a matching user for this request.",
+  "server_error": "Server error"
+}

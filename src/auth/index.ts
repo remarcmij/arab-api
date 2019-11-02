@@ -1,22 +1,23 @@
 import sgMail from '@sendgrid/mail';
-import crypto from 'crypto';
 import express, { NextFunction, Request, Response } from 'express';
 import { body, validationResult } from 'express-validator/check';
 import { sanitizeBody } from 'express-validator/filter';
+import jwt from 'jsonwebtoken';
+import _template from 'lodash.template';
 import passport from 'passport';
 import logger from '../config/logger';
 import * as C from '../constants';
 import User, { AuthStatus, encryptPassword, IUser } from '../models/User';
-import VerificationToken, {
-  IVerificationToken,
-} from '../models/VerificationToken';
 import { assertEnvVar } from '../util';
 import { isAuthenticated, sendAuthToken, setTokenCookie } from './auth-service';
+import emailTemplate from './email-template';
 import './google/passport-setup';
 
-const authRouter = express.Router();
+const compiledTemplate = _template(emailTemplate);
 
-authRouter
+const router = express.Router();
+
+router
   .get(
     '/google/callback',
     passport.authenticate('google', { session: false }),
@@ -36,7 +37,7 @@ authRouter
     ),
   );
 
-authRouter.post(
+router.post(
   '/login',
   [
     body('email', C.EMAIL_ADDRESS_REQUIRED).isEmail(),
@@ -67,7 +68,7 @@ authRouter.post(
   sendAuthToken,
 );
 
-authRouter.post(
+router.post(
   '/signup',
   [
     body('name', C.NAME_REQUIRED)
@@ -103,23 +104,40 @@ authRouter.post(
       user = await User.create(newUser);
       req.user = user;
 
-      const newToken: IVerificationToken = {
-        _userId: user._id,
-        token: crypto.randomBytes(16).toString('hex'),
+      const payload = {
+        user: {
+          id: user.id,
+        },
       };
 
-      const token = new VerificationToken(newToken);
-      await token.save();
+      assertEnvVar('CONFIRMATION_SECRET');
+      const confirmationSecret = process.env.CONFIRMATION_SECRET;
+      const token = await jwt.sign(payload, confirmationSecret!, {
+        expiresIn: '12h',
+      });
+
+      // Check if not token
+      if (!token) {
+        return res.status(401).json({ msg: 'No token, authorization denied' });
+      }
 
       const link =
         process.env.NODE_ENV === 'production'
-          ? `https://${req.headers.host}/confirmation`
-          : `http://localhost:3000/confirmation`;
+          ? `https://${req.headers.host}/confirmation/${token}`
+          : `http://localhost:3000/confirmation/${token}`;
+
+      const subject = req.t('verification_email.subject');
+      const values: object = req.t('verification_email.body', {
+        returnObjects: true,
+        name,
+      });
+      const html = compiledTemplate({ link, ...values });
+
       const msg = {
         from: 'noreply@taalmap.nl',
         to: user.email,
-        subject: 'Account Verification Token',
-        text: `Hello,\n\nPlease verify your account by clicking the link: \n${link}/${token.token}.\n`,
+        subject,
+        html,
       };
 
       assertEnvVar('SENDGRID_API_KEY');
@@ -134,12 +152,47 @@ authRouter.post(
   sendAuthToken,
 );
 
-authRouter.get('/verify/:token', async (req: Request, res: Response) => {
-  console.log('req.params.token :', req.params.token);
-  res.end();
+router.post('/confirmation', async (req: Request, res: Response) => {
+  const { token } = req.body;
+
+  try {
+    assertEnvVar('CONFIRMATION_SECRET');
+    const confirmationSecret = process.env.CONFIRMATION_SECRET;
+    const {
+      user: { id },
+    } = jwt.verify(token, confirmationSecret!) as {
+      user: { id: string };
+    };
+
+    const user = await User.findById({ _id: id });
+
+    if (!user) {
+      return res
+        .status(400)
+        .json({ error: 'user-not-found', msg: req.t('user_not_found') });
+    }
+
+    if (user.verified) {
+      return res
+        .status(400)
+        .json({ error: 'already-verified', msg: req.t('already_verified') });
+    }
+
+    res.status(200).json({ msg: req.t('account_verified') });
+    user.verified = true;
+    await user.save();
+  } catch (err) {
+    logger.error(err.message);
+    if (err.name === 'TokenExpiredError') {
+      return res
+        .status(404)
+        .json({ error: 'token-expired', msg: req.t('token_expired') });
+    }
+    res.status(500).json({ error: 'server-error', msg: req.t('server_error') });
+  }
 });
 
-authRouter.get('/', isAuthenticated, async (req: Request, res: Response) => {
+router.get('/', isAuthenticated, async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.sendStatus(401);
@@ -159,6 +212,6 @@ authRouter.get('/', isAuthenticated, async (req: Request, res: Response) => {
   }
 });
 
-authRouter.use('*', (req: Request, res: Response) => res.sendStatus(404));
+router.use('*', (req: Request, res: Response) => res.sendStatus(404));
 
-export default authRouter;
+export default router;

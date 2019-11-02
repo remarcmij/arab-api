@@ -32,7 +32,7 @@ const userSchema = new Schema<IUser>({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   photo: { type: String, required: false },
-  status: { type: String, required: true },
+  status: { type: String, required: true }, // TODO: change to: active: {type: Boolean, default: false} ??
   hashedPassword: { type: String, required: false },
   verified: { type: Boolean, default: false },
   isAdmin: { type: Boolean, default: false },

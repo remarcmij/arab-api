@@ -1,0 +1,29 @@
+{
+  "label": {
+    "name": "Name",
+    "email": "Email",
+    "password": "Password",
+    "repeat_password": "Repeat Password"
+  },
+  "about": "About...",
+  "app_title": "Study Buddy Arabic",
+  "change_settings": "Change Settings",
+  "create_account": "Create new account",
+  "email_address": "Email address",
+  "flashcards": "Flashcards",
+  "have_account_already": "Already have an account?",
+  "login_prompt": "Sign in with user name and password.",
+  "login": "Log in",
+  "logout": "Log out",
+  "look_up": "Look up",
+  "no_account_yet": "No account yet?",
+  "no_voice": "None",
+  "read_aloud": "Read aloud",
+  "register_button": "Register",
+  "search_tooltip": "Search",
+  "show_transcripion": "Show transcription",
+  "show_vocalization": "Show vocalization",
+  "sign_up": "Sign Up",
+  "transcription_system": "Transcription",
+  "voice_name": "Voice"
+}
