@@ -24,4 +24,4 @@ const wordSchema = new Schema<IWord>({
 
 export interface IWordDocument extends Document, IWord {}
 
-export default mongoose.model<IWordDocument>('Word', wordSchema);
+export default mongoose.models.Word || mongoose.model<IWordDocument>('Word', wordSchema);

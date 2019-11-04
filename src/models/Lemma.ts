@@ -20,4 +20,4 @@ const lemmaSchema = new Schema<ILemma>({
 
 export interface ILemmaDocument extends Document, ILemma {}
 
-export default mongoose.model<ILemmaDocument>('Lemma', lemmaSchema);
+export default mongoose.models.Lemma || mongoose.model<ILemmaDocument>('Lemma', lemmaSchema);

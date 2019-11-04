@@ -13,7 +13,7 @@ const autoCompleteSchema = new Schema<IAutoComplete>({
 
 export interface IAutoCompleteDocument extends Document, IAutoComplete {}
 
-export default mongoose.model<IAutoCompleteDocument>(
+export default mongoose.models.AutoComplete || mongoose.model<IAutoCompleteDocument>(
   'AutoComplete',
   autoCompleteSchema,
 );

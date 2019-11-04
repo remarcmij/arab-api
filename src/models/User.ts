@@ -61,4 +61,4 @@ export const isAdmin = (user: IUser) => user.isAdmin;
 
 export interface IUserDocument extends Document, IUser {}
 
-export default mongoose.model<IUserDocument>('User', userSchema);
+export default mongoose.models.User || mongoose.model<IUserDocument>('User', userSchema);

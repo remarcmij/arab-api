@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Document, Schema, mongo } from 'mongoose';
 
 export interface ITopic {
   article: string;
@@ -24,4 +24,4 @@ const topicSchema = new Schema<ITopic>({
 
 export interface ITopicDocument extends ITopic, Document {}
 
-export default mongoose.model<ITopicDocument>('Topic', topicSchema);
+export default mongoose.models.Topic || mongoose.model<ITopicDocument>('Topic', topicSchema);
