@@ -7,7 +7,7 @@ import path from 'path';
 import util from 'util';
 import logger from '../config/logger';
 import { ILemma } from '../models/lemma';
-import { ITopic } from '../models/topic';
+import Topic, { ITopic } from '../models/topic';
 import * as db from './db';
 import { parseBody } from './parser';
 import TaskQueue from './TaskQueue';
@@ -102,4 +102,27 @@ export function watchContent() {
   fs.watch(CONTENT_DIR, () => {
     refreshContentDebounced();
   });
+}
+
+export async function getAllContentFiles() {
+  const filePaths = await glob(`${CONTENT_DIR}/*.md`);
+  const names = filePaths.map(filePath => path.basename(filePath, '.md'));
+
+  return {
+    names, filePaths,
+  };
+}
+
+export async function dbContentCleanup() {
+  try {
+    const topics = await Topic.find({});
+    const files = await getAllContentFiles();
+
+    const topicsWithNoFile = topics.filter(topic => !files.names.includes(topic.filename));
+
+    const promises = topicsWithNoFile.map(topic => db.deleteTopic(topic.filename));
+    await Promise.all(promises);
+  } catch (error) {
+    logger.error(error);
+  }
 }
