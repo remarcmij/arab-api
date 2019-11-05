@@ -55,7 +55,8 @@ const docRoot = path.resolve(__dirname, clientPath);
     logger.info('---------------------------------------');
     try {
       await content.syncContent();
-      content.watchContent();
+      await content.dbContentCleanup();
+
       logger.info(`server started at http://localhost:${PORT}`);
     } catch (err) {
       logger.error(`error starting server: ${err.message}`);

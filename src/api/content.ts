@@ -2,17 +2,17 @@ import crypto from 'crypto';
 import fm from 'front-matter';
 import fs from 'fs';
 import _glob from 'glob';
-import debounce from 'lodash.debounce';
 import path from 'path';
 import util from 'util';
 import logger from '../config/logger';
-import { ILemma } from '../models/lemma';
-import { ITopic } from '../models/topic';
+import { ILemma } from '../models/Lemma';
+import Topic, { ITopic } from '../models/Topic';
 import * as db from './db';
 import { parseBody } from './parser';
 import TaskQueue from './TaskQueue';
 
 const glob = util.promisify(_glob);
+const removeFile = util.promisify(fs.unlink);
 const CONCURRENCY = 2;
 
 const taskQueue = new TaskQueue(CONCURRENCY, () => {
@@ -87,19 +87,73 @@ async function loadDocument(filePath: string) {
   }
 }
 
-export async function syncContent() {
-  const filePaths = await glob(`${CONTENT_DIR}/*.md`);
+export async function syncContent(contentDir = CONTENT_DIR) {
+  const filePaths = await glob(`${contentDir}/*.md`);
   filePaths.forEach(filePath => {
     taskQueue.pushTask(() => loadDocument(filePath));
   });
-  // TODO: handle deleted files
 }
 
-export function watchContent() {
-  const refreshContentDebounced = debounce(syncContent, 5000, {
-    trailing: true,
-  });
-  fs.watch(CONTENT_DIR, () => {
-    refreshContentDebounced();
-  });
+export function validateDocumentPayload(data: string) {
+  parseBody(data);
+  const fmResult = fm<object>(data);
+
+  const hasAttributes = Object.keys(fmResult.attributes).length;
+  if (!hasAttributes) {
+    throw new Error('invalid empty markdown head file.');
+  }
+
+  const hasBody = fmResult.body.replace(/\r?\n/ig, '').trim();
+  if (!hasBody) {
+    throw new Error('invalid empty markdown body file.');
+  }
+
+  return fmResult;
+}
+
+export function validateDocumentName(file: { originalname: string }) {
+  const hasMDExtension = path.extname(file.originalname) === '.md';
+
+  if (!hasMDExtension) {
+    throw new Error(`can't upload a none markdown file.`);
+  }
+
+  const [, article] = file.originalname.split('.');
+
+  if (!article || article === 'md') {
+    throw new Error(`${file.originalname}: expected filename format <publication>.<article>.md.`);
+  }
+}
+
+export async function removeContentAndTopic(filename: string) {
+  const filePath = path.join(CONTENT_DIR, filename) + '.md';
+
+  const isDeleted = await db.deleteTopic(filename);
+  if (!isDeleted) {
+    throw new Error('topic not found with the name of: ' + filename);
+  }
+  await removeFile(filePath);
+}
+
+export async function getAllContentFiles() {
+  const filePaths = await glob(`${CONTENT_DIR}/*.md`);
+  const names = filePaths.map(filePath => path.basename(filePath, '.md'));
+
+  return {
+    names, filePaths,
+  };
+}
+
+export async function dbContentCleanup() {
+  try {
+    const topics = await Topic.find({});
+    const files = await getAllContentFiles();
+
+    const topicsWithNoFile = topics.filter(topic => !files.names.includes(topic.filename));
+
+    const promises = topicsWithNoFile.map(topic => db.deleteTopic(topic.filename));
+    await Promise.all(promises);
+  } catch (error) {
+    logger.error(error);
+  }
 }

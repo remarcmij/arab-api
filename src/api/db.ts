@@ -72,7 +72,9 @@ export async function deleteTopic(filename: string) {
       Topic.deleteOne({ filename }),
     ]);
     logger.debug(`deleted topic: ${filename}`);
+    return true;
   }
+  return false;
 }
 
 export async function insertTopic(topic: ITopic, lemmas: ILemma[]) {

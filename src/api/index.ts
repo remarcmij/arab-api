@@ -1,13 +1,19 @@
-import express, { Request, Response } from 'express';
+import express, { ErrorRequestHandler, NextFunction, Request, Response } from 'express';
 import { check, validationResult } from 'express-validator/check';
+import multer from 'multer';
 import { isAuthenticated, maybeAuthenticated } from '../auth/auth-service';
 import '../auth/local/passport-setup';
 import logger from '../config/logger';
 import { ITopic } from '../models/Topic';
 import User, { isAuthorized } from '../models/User';
+import { removeContentAndTopic, syncContent, validateDocumentName, validateDocumentPayload } from './content';
 import * as db from './db';
 
+import fs from 'fs';
+import path from 'path';
+
 const apiRouter = express.Router();
+const upload = multer();
 
 const handleRequestErrors = (req: Request, res: Response): boolean => {
   const errors = validationResult(req);
@@ -28,6 +34,40 @@ apiRouter.get('/', maybeAuthenticated, (req: Request, res: Response) => {
       topics.filter(topic => !topic.restricted || isAuthorized(req.user)),
     )
     .then(topics => res.json(topics));
+});
+
+apiRouter.post('/upload', upload.single('file'), async (req, res, next) => {
+  const data = req.file.buffer.toString('utf8');
+  const dir = path.join(__dirname, '../../content/');
+  const destination = path.join(dir, req.file.originalname);
+  try {
+
+    validateDocumentName(req.file);
+    validateDocumentPayload(data);
+
+    await fs.promises.writeFile(destination, data);
+    await syncContent(dir);
+    res.sendStatus(200);
+  } catch (error) {
+    if (error.name.startsWith('ERR')) {
+      return res.status(500).json({ error: 'Oops! something went wrong.' });
+    }
+
+    res.status(400).json({ error: error.message });
+  }
+});
+
+apiRouter.delete('/remove-topic/:filename', async (req, res, next) => {
+  try {
+    await removeContentAndTopic(req.params.filename);
+    res.sendStatus(200);
+  } catch (error) {
+    if (error.name.startsWith('ERR')) {
+      return res.status(500).json({ error: 'Oops! something went wrong.' });
+    }
+
+    res.status(400).json({ error: error.message });
+  }
 });
 
 apiRouter.get(
@@ -136,5 +176,10 @@ apiRouter.get(
 );
 
 apiRouter.use('*', (req: Request, res: Response) => res.sendStatus(404));
+
+apiRouter.use((error: ErrorRequestHandler & Error, req: Request, res: Response, next: NextFunction) => {
+  // handling any unexpected middleware libraries error.
+  res.status(500).json({ error: 'Oops! Something went wrong.' });
+});
 
 export default apiRouter;
