@@ -25,6 +25,7 @@ interface IAttributes {
   restricted: boolean;
 }
 
+const UPLOADS_CONTENT_DIR = path.join(__dirname, '../../content/');
 const CONTENT_DIR = path.join(
   __dirname,
   process.env.NODE_ENV === 'production'
@@ -126,7 +127,19 @@ export function validateDocumentName(file: { originalname: string }) {
 }
 
 export async function removeContentAndTopic(filename: string) {
-  const filePath = path.join(CONTENT_DIR, filename) + '.md';
+  let filePath = path.join(CONTENT_DIR, filename) + '.md';
+
+  let isFileExists = fs.existsSync(filePath);
+  if (!isFileExists) {
+    // if not exists, set a new file path with the uploads directory content.
+    filePath = path.join(UPLOADS_CONTENT_DIR, filename) + '.md';
+    isFileExists = fs.existsSync(filePath);
+  }
+
+  if (!isFileExists) {
+    // still no file?! abort!
+    throw new Error('No file with the specified name: ' + filename);
+  }
 
   const isDeleted = await db.deleteTopic(filename);
   if (!isDeleted) {
@@ -136,7 +149,11 @@ export async function removeContentAndTopic(filename: string) {
 }
 
 export async function getAllContentFiles() {
-  const filePaths = await glob(`${CONTENT_DIR}/*.md`);
+  const contentFilePaths = await glob(`${CONTENT_DIR}/*.md`);
+  const uploadsFilePaths = await glob(`${UPLOADS_CONTENT_DIR}/*.md`);
+
+  const filePaths = [...contentFilePaths, ...uploadsFilePaths];
+
   const names = filePaths.map(filePath => path.basename(filePath, '.md'));
 
   return {

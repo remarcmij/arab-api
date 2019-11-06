@@ -1,12 +1,18 @@
 import express, { ErrorRequestHandler, NextFunction, Request, Response } from 'express';
 import { check, validationResult } from 'express-validator/check';
 import multer from 'multer';
-import { isAuthenticated, maybeAuthenticated } from '../auth/auth-service';
+import { isAdmin, isAuthenticated, maybeAuthenticated } from '../auth/auth-service';
 import '../auth/local/passport-setup';
 import logger from '../config/logger';
 import { ITopic } from '../models/Topic';
 import User, { isAuthorized } from '../models/User';
-import { removeContentAndTopic, syncContent, validateDocumentName, validateDocumentPayload } from './content';
+import {
+  getAllContentFiles,
+  removeContentAndTopic,
+  syncContent,
+  validateDocumentName,
+  validateDocumentPayload,
+} from './content';
 import * as db from './db';
 
 import fs from 'fs';
@@ -14,6 +20,8 @@ import path from 'path';
 
 const apiRouter = express.Router();
 const upload = multer();
+
+const uploadContentDir = path.join(__dirname, '../../content/');
 
 const handleRequestErrors = (req: Request, res: Response): boolean => {
   const errors = validationResult(req);
@@ -23,6 +31,8 @@ const handleRequestErrors = (req: Request, res: Response): boolean => {
   }
   return false;
 };
+
+const handleNodeFSErrors = (error: Error) => error.name.startsWith('ERR');
 
 /*
  * @oas [get] /api
@@ -36,39 +46,61 @@ apiRouter.get('/', maybeAuthenticated, (req: Request, res: Response) => {
     .then(topics => res.json(topics));
 });
 
-apiRouter.post('/upload', upload.single('file'), async (req, res, next) => {
-  const data = req.file.buffer.toString('utf8');
-  const dir = path.join(__dirname, '../../content/');
-  const destination = path.join(dir, req.file.originalname);
-  try {
+apiRouter.post('/upload', isAdmin, upload.single('file'),
+  async (req: Request, res: Response) => {
+    const data = req.file.buffer.toString('utf8');
+    const destination = path.join(uploadContentDir, req.file.originalname);
+    try {
 
-    validateDocumentName(req.file);
-    validateDocumentPayload(data);
+      validateDocumentName(req.file);
+      validateDocumentPayload(data);
 
-    await fs.promises.writeFile(destination, data);
-    await syncContent(dir);
-    res.sendStatus(200);
-  } catch (error) {
-    if (error.name.startsWith('ERR')) {
-      return res.status(500).json({ error: 'Oops! something went wrong.' });
+      await fs.promises.writeFile(destination, data);
+      await syncContent(uploadContentDir);
+      res.sendStatus(200);
+    } catch (error) {
+      const isFSError = handleNodeFSErrors(error);
+      if (isFSError) {
+        return res.status(500).json({ error: 'Oops! something went wrong.' });
+      }
+
+      res.status(400).json({ error: error.message });
     }
+  });
 
-    res.status(400).json({ error: error.message });
-  }
-});
+apiRouter.delete('/remove-topic/:filename', isAdmin,
+  async (req: Request, res: Response) => {
+    try {
+      await removeContentAndTopic(req.params.filename);
+      res.sendStatus(200);
+    } catch (error) {
+      const isFSError = handleNodeFSErrors(error);
+      if (isFSError) {
+        return res.status(500).json({ error: 'Oops! something went wrong.' });
+      }
 
-apiRouter.delete('/remove-topic/:filename', async (req, res, next) => {
-  try {
-    await removeContentAndTopic(req.params.filename);
-    res.sendStatus(200);
-  } catch (error) {
-    if (error.name.startsWith('ERR')) {
-      return res.status(500).json({ error: 'Oops! something went wrong.' });
+      res.status(400).json({ error: error.message });
     }
+  });
 
-    res.status(400).json({ error: error.message });
-  }
-});
+apiRouter.get('/sync-content', isAdmin,
+  async (req: Request, res: Response) => {
+    try {
+      const { names: filenames } = await getAllContentFiles();
+
+      await syncContent(uploadContentDir);
+      await syncContent();
+
+      res.status(200).json(filenames);
+    } catch (error) {
+      const isFSError = handleNodeFSErrors(error);
+      if (isFSError) {
+        return res.status(500).json({ error: 'Oops! something went wrong.' });
+      }
+
+      res.status(400).json({ error: error.message });
+    }
+  });
 
 apiRouter.get(
   '/profile',
