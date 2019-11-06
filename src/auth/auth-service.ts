@@ -4,11 +4,11 @@ import { NextFunction, Request, Response } from 'express';
 import expressJwt from 'express-jwt';
 import jwt from 'jsonwebtoken';
 import User, { IUser } from '../models/User';
-import { assertEnvVar } from '../util';
+import { assertIsString } from '../util';
 
 const EXPIRES_IN_SECONDS = 30 * 24 * 60 * 60; // 30 days * hours * minutes * seconds
 
-const JWT_SECRET = process.env.JWT_SECRET || 'my_secret';
+const JWT_SECRET = process.env.JWT_SECRET ?? 'my_secret';
 
 const validateJwt = expressJwt({
   secret: JWT_SECRET,
@@ -109,8 +109,8 @@ export const sendAuthToken = (req: Request, res: Response) => {
 };
 
 export const sendMail = (user: IUser) => {
-  assertEnvVar('SENDGRID_API_KEY');
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
+  assertIsString(process.env.SENDGRID_API_KEY);
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
   /* cSpell: disable */
   const msg = {
     // to: process.env.ADMIN_EMAIL,

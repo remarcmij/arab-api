@@ -8,7 +8,7 @@ import passport from 'passport';
 import logger from '../config/logger';
 import * as C from '../constants';
 import User, { AuthStatus, encryptPassword, IUser } from '../models/User';
-import { assertEnvVar } from '../util';
+import { assertIsString } from '../util';
 import { isAuthenticated, sendAuthToken, setTokenCookie } from './auth-service';
 import emailTemplate from './email-template';
 import './google/passport-setup';
@@ -52,7 +52,7 @@ router.post(
       return res.status(400).json({ errors: errors.array() });
     }
     passport.authenticate('local', (err, user, info) => {
-      const error = err || info;
+      const error = err ?? info;
       if (error) {
         return void res.status(422).json(error);
       }
@@ -110,7 +110,7 @@ router.post(
         },
       };
 
-      assertEnvVar('CONFIRMATION_SECRET');
+      assertIsString(process.env.CONFIRMATION_SECRET);
       const confirmationSecret = process.env.CONFIRMATION_SECRET;
       const token = await jwt.sign(payload, confirmationSecret!, {
         expiresIn: '12h',
@@ -140,8 +140,8 @@ router.post(
         html,
       };
 
-      assertEnvVar('SENDGRID_API_KEY');
-      sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
+      assertIsString(process.env.SENDGRID_API_KEY);
+      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
       await sgMail.send(msg);
       logger.debug(`A verification email has been sent to ${user!.email}.`);
       next();
@@ -156,11 +156,10 @@ router.post('/confirmation', async (req: Request, res: Response) => {
   const { token } = req.body;
 
   try {
-    assertEnvVar('CONFIRMATION_SECRET');
-    const confirmationSecret = process.env.CONFIRMATION_SECRET;
+    assertIsString(process.env.CONFIRMATION_SECRET);
     const {
       user: { id },
-    } = jwt.verify(token, confirmationSecret!) as {
+    } = jwt.verify(token, process.env.CONFIRMATION_SECRET) as {
       user: { id: string };
     };
 

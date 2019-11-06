@@ -4,7 +4,7 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import logger from '../../config/logger';
 import User, { AuthStatus, IUser, IUserDocument } from '../../models/User';
-import { assertEnvVar } from '../../util';
+import { assertIsString } from '../../util';
 import { sendMail } from '../auth-service';
 
 interface IGoogleProfile {
@@ -32,7 +32,7 @@ async function verify(
       },
     } = profile;
     const photo =
-      (profile.photos && profile.photos[0] && profile.photos[0].value) || '';
+      (profile.photos && profile.photos[0] && profile.photos[0].value) ?? '';
     let user = await User.findOne({ email });
     if (!user) {
       const userInfo: IUser = {
@@ -57,13 +57,13 @@ async function verify(
 
 passport.use(
   (() => {
-    assertEnvVar('GOOGLE_CLIENT_ID');
-    assertEnvVar('GOOGLE_CLIENT_SECRET');
+    assertIsString(process.env.GOOGLE_CLIENT_ID);
+    assertIsString(process.env.GOOGLE_CLIENT_SECRET);
     return new GoogleStrategy<IGoogleProfile, IUserDocument>(
       {
         callbackURL: '/auth/google/callback',
-        clientID: process.env.GOOGLE_CLIENT_ID!,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+        clientID: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       },
       verify,
     );

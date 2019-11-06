@@ -1,5 +1,5 @@
-import assert from 'assert';
+import _assert from 'assert';
 
-export function assertEnvVar(name: string) {
-  assert(process.env[name], `${name} environment variable is required`);
+export function assertIsString(val: any): asserts val is string {
+  _assert(typeof val === 'string', 'Expected a string!');
 }
