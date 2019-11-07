@@ -31,7 +31,7 @@ router
         scope: ['openid', 'profile', 'email'],
         session: false,
       },
-      (req: Request, res: Response) => {
+      (req: Request, _res: Response) => {
         console.log('req.user :', req.user);
       },
     ),

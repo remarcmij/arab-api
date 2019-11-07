@@ -58,7 +58,7 @@ export const isAuthenticated = compose([
       return res.status(500).json(err);
     }
   },
-  async (err: IError, req: Request, res: Response, next: NextFunction) => {
+  async (err: IError, _req: Request, res: Response, _next: NextFunction) => {
     if (typeof err.status !== 'undefined') {
       return res.status(err.status).json(err);
     }
@@ -122,5 +122,6 @@ export const sendMail = (user: IUser) => {
   };
   /* cSpell: enable */
   console.log('msg :', msg);
+  console.log('user :', user);
   return sgMail.send(msg);
 };

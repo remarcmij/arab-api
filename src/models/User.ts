@@ -9,10 +9,11 @@ export const enum AuthStatus {
 // ref: https://codemoto.io/coding/nodejs/email-verification-node-express-mongodb
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
-    // tslint:disable-next-line: no-empty-interface interface-name
+    // eslint-disable-next-line @typescript-eslint/interface-name-prefix
     interface User {
-      id?: any;
+      id?: unknown;
       name: string;
       email: string;
       photo?: string;

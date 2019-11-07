@@ -114,7 +114,7 @@ apiRouter.get(
     }
     const { term } = req.query;
     db.searchWord(term, isAuthorized(req.user))
-      .then((lemmas: any[]) => res.json(lemmas))
+      .then((lemmas: unknown[]) => res.json(lemmas))
       .catch(err => res.status(500).json({ error: err.message }));
   },
 );
@@ -130,7 +130,7 @@ apiRouter.get(
     }
     const { term } = req.query;
     db.lookup(term)
-      .then((words: any[]) => res.json({ words, term }))
+      .then((words: unknown[]) => res.json({ words, term }))
       .catch(err => res.status(500).json({ error: err.message }));
   },
 );

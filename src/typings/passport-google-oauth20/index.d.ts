@@ -1,6 +1,7 @@
 declare module 'passport-google-oauth20' {
   import { Strategy as PassportStrategy } from 'passport';
 
+  // eslint-disable-next-line @typescript-eslint/interface-name-prefix
   export interface StrategyOptions {
     /**
      * Your Google application's client id.
