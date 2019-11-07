@@ -4,6 +4,7 @@
     "SENDGRID",
     "Tashkeel",
     "Transcoder",
+    "clickaway",
     "clsx",
     "dotfiles",
     "etag",
@@ -33,8 +34,14 @@
   "eslint.validate": [
     "javascript",
     "javascriptreact",
-    "typescript",
-    "typescriptreact"
+    {
+      "language": "typescript",
+      "autoFix": true
+    },
+    {
+      "language": "typescriptreact",
+      "autoFix": true
+    }
   ],
   "typescript.tsdk": "node_modules\\typescript\\lib"
 }

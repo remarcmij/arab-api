@@ -9,6 +9,7 @@
   "have_account_already": "Already have an account?",
   "login_prompt": "Sign in with email and password.",
   "login": "Sign In",
+  "login_success": "Signed in successfully.",
   "logout": "Logout",
   "look_up": "Look up",
   "name_label": "Full name",

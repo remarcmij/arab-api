@@ -13,7 +13,7 @@ declare global {
   namespace Express {
     // eslint-disable-next-line @typescript-eslint/interface-name-prefix
     interface User {
-      id?: unknown;
+      id?: any;
       name: string;
       email: string;
       photo?: string;
