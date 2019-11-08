@@ -99,7 +99,7 @@ export function validateDocumentPayload(data: string) {
   parseBody(data);
   const fmResult = fm<object>(data);
 
-  const hasAttributes = Object.keys(fmResult.attributes).length;
+  const hasAttributes = !!Object.keys(fmResult.attributes).length;
   if (!hasAttributes) {
     throw new Error('invalid empty markdown head file.');
   }
