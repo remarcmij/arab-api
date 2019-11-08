@@ -104,7 +104,7 @@ export function validateDocumentPayload(data: string) {
     throw new Error('invalid empty markdown head file.');
   }
 
-  const hasBody = fmResult.body.replace(/\r?\n/ig, '').trim();
+  const hasBody = !!fmResult.body.replace(/\r?\n/ig, '').trim();
   if (!hasBody) {
     throw new Error('invalid empty markdown body file.');
   }
