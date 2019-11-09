@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import { Document, model, Schema } from 'mongoose';
 
 export interface ILemma {
   native: string;
@@ -20,4 +20,4 @@ const lemmaSchema = new Schema<ILemma>({
 
 export interface ILemmaDocument extends Document, ILemma {}
 
-export default mongoose.model<ILemmaDocument>('Lemma', lemmaSchema);
+export default model<ILemmaDocument>('Lemma', lemmaSchema);

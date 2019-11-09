@@ -4,11 +4,11 @@ import { NextFunction, Request, Response } from 'express';
 import expressJwt from 'express-jwt';
 import jwt from 'jsonwebtoken';
 import User, { IUser } from '../models/User';
-import { assertEnvVar } from '../util';
+import { assertIsString } from '../util';
 
 const EXPIRES_IN_SECONDS = 30 * 24 * 60 * 60; // 30 days * hours * minutes * seconds
 
-const JWT_SECRET = process.env.JWT_SECRET || 'my_secret';
+const JWT_SECRET = process.env.JWT_SECRET ?? 'my_secret';
 
 const validateJwt = expressJwt({
   secret: JWT_SECRET,
@@ -58,7 +58,7 @@ export const isAuthenticated = compose([
       return res.status(500).json(err);
     }
   },
-  async (err: IError, req: Request, res: Response, next: NextFunction) => {
+  async (err: IError, _req: Request, res: Response, _next: NextFunction) => {
     if (typeof err.status !== 'undefined') {
       return res.status(err.status).json(err);
     }
@@ -69,7 +69,7 @@ export const isAuthenticated = compose([
 export const isAdmin = compose([
   isAuthenticated,
   (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user!.isAdmin) {
+    if (!req.user!.admin) {
       return res.status(403).json({ message: 'Forbidden' });
     }
     next();
@@ -91,16 +91,14 @@ export const setTokenCookie = (req: Request, res: Response) => {
       .json({ message: 'Something went wrong, please try again.' });
   }
   const token = signToken(req.user.id);
-  res.cookie('token', JSON.stringify(token), {
-    maxAge: EXPIRES_IN_SECONDS * 1000,
-  });
+  res.cookie('token', JSON.stringify(token));
 
   const redirectUrl =
     process.env.NODE_ENV === 'production' ? '/' : 'http://localhost:3000';
   res.redirect(redirectUrl);
 };
 
-export const sendToken = (req: Request, res: Response) => {
+export const sendAuthToken = (req: Request, res: Response) => {
   if (!req.user) {
     return res
       .status(404)
@@ -110,9 +108,12 @@ export const sendToken = (req: Request, res: Response) => {
   res.json({ token });
 };
 
+// TODO: send an email to the admin when an account is
+// verified so that it can be considered for authorization.
+// Email content to be revised.
 export const sendMail = (user: IUser) => {
-  assertEnvVar('SENDGRID_API_KEY');
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
+  assertIsString(process.env.SENDGRID_API_KEY);
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
   /* cSpell: disable */
   const msg = {
     // to: process.env.ADMIN_EMAIL,
@@ -124,5 +125,6 @@ export const sendMail = (user: IUser) => {
   };
   /* cSpell: enable */
   console.log('msg :', msg);
+  console.log('user :', user);
   return sgMail.send(msg);
 };

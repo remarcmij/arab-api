@@ -1,0 +1,13 @@
+{
+  "verification_email": {
+    "subject": "Account bevestiging",
+    "body": {
+      "title": "Email bevestiging",
+      "greeting": "Hallo {{name}}",
+      "opening": "Bedankt voor uw registratie!",
+      "prompt": "Bevestig uw aanmelding door te klikken op:",
+      "buttonText": "Hier",
+      "closing": "Met vriendelijke groet,<br>Team Studie Hulp Arabisch"
+    }
+  }
+}

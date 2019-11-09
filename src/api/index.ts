@@ -1,5 +1,6 @@
 import express, { ErrorRequestHandler, NextFunction, Request, Response } from 'express';
 import { check, validationResult } from 'express-validator/check';
+import i18next from 'i18next';
 import multer from 'multer';
 import { isAdmin, isAuthenticated, maybeAuthenticated } from '../auth/auth-service';
 import '../auth/local/passport-setup';
@@ -115,7 +116,7 @@ apiRouter.get(
       }
       user.lastAccess = new Date();
       await user.save();
-      logger.info(`user ${user.email} (${user.status}) signed in`);
+      logger.info(`user ${user.email} signed in`);
       res.json(user);
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -164,10 +165,15 @@ apiRouter.get(
     const { filename } = req.params;
     db.getArticle(filename).then((topic: ITopic): void => {
       if (!topic) {
-        return void res.sendStatus(404);
+        return void res
+          .status(404)
+          .json({ message: i18next.t('unexpected_error') });
       }
       if (topic.restricted && !isAuthorized(req.user)) {
-        return void res.sendStatus(401);
+        logger.warn(`Attempt to access protected content`);
+        return void res
+          .status(401)
+          .json({ message: i18next.t('unauthorized') });
       }
       res.json(topic);
     });
@@ -186,7 +192,7 @@ apiRouter.get(
     }
     const { term } = req.query;
     db.searchWord(term, isAuthorized(req.user))
-      .then((lemmas: any[]) => res.json(lemmas))
+      .then((lemmas: unknown[]) => res.json(lemmas))
       .catch(err => res.status(500).json({ error: err.message }));
   },
 );
@@ -202,7 +208,7 @@ apiRouter.get(
     }
     const { term } = req.query;
     db.lookup(term)
-      .then((words: any[]) => res.json({ words, term }))
+      .then((words: unknown[]) => res.json({ words, term }))
       .catch(err => res.status(500).json({ error: err.message }));
   },
 );

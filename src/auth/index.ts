@@ -1,20 +1,25 @@
+import sgMail from '@sendgrid/mail';
 import express, { NextFunction, Request, Response } from 'express';
 import { body, validationResult } from 'express-validator/check';
+import { sanitizeBody } from 'express-validator/filter';
+import i18next from 'i18next';
+import jwt from 'jsonwebtoken';
+import _template from 'lodash.template';
 import passport from 'passport';
 import logger from '../config/logger';
-import * as C from '../constants';
-import User, { encryptPassword } from '../models/User';
-import {
-  isAuthenticated,
-  sendMail,
-  sendToken,
-  setTokenCookie,
-} from './auth-service';
+import User, { encryptPassword, IUser } from '../models/User';
+import { assertIsString } from '../util';
+import { isAuthenticated, sendAuthToken, setTokenCookie } from './auth-service';
+import emailTemplate from './email-template';
 import './google/passport-setup';
 
-const authRouter = express.Router();
+const PASSWORD_MIN_LENGTH = 8;
 
-authRouter
+const compiledTemplate = _template(emailTemplate);
+
+const router = express.Router();
+
+router
   .get(
     '/google/callback',
     passport.authenticate('google', { session: false }),
@@ -28,49 +33,62 @@ authRouter
         scope: ['openid', 'profile', 'email'],
         session: false,
       },
-      (req: Request, res: Response) => {
+      (req: Request, _res: Response) => {
         console.log('req.user :', req.user);
       },
     ),
   );
 
-authRouter.post(
+router.post(
   '/login',
-  body('email', C.EMAIL_ADDRESS_REQUIRED).isEmail(),
-  body('password', C.PASSWORD_REQUIRED).exists(),
-  (req, res, next) => {
+  [
+    body('email', i18next.t('email_required')).isEmail(),
+    sanitizeBody('email').normalizeEmail(),
+    body('password', i18next.t('password_required'))
+      .not()
+      .isEmpty(),
+  ],
+  (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json({ errors: errors.array() });
+    }
     passport.authenticate('local', (err, user, info) => {
-      const error = err || info;
+      const error = err ?? info;
       if (error) {
-        return void res.status(401).json(error);
+        return void res.status(422).json(error);
       }
       if (!user) {
         return void res.status(401).json({
-          message: C.SOMETHING_WENT_WRONG,
+          message: i18next.t('something_went_wrong'),
         });
       }
       req.user = user;
       next();
     })(req, res, next);
   },
-  sendToken,
+  sendAuthToken,
 );
 
-authRouter.post(
+router.post(
   '/signup',
   [
-    body('name', C.NAME_REQUIRED)
+    body('name', i18next.t('user_name_required'))
       .not()
       .isEmpty(),
-    body('email', C.EMAIL_ADDRESS_INVALID).isEmail(),
-    body('password', C.PASSWORD_MIN_LENGTH).isLength({
-      min: 8,
+    body('email', i18next.t('email_required')).isEmail(),
+    sanitizeBody('email').normalizeEmail(),
+    body(
+      'password',
+      i18next.t('password_min_length', { minLength: PASSWORD_MIN_LENGTH }),
+    ).isLength({
+      min: PASSWORD_MIN_LENGTH,
     }),
   ],
   async (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(422).json({ errors: errors.array() });
     }
 
     try {
@@ -78,32 +96,108 @@ authRouter.post(
       let user = await User.findOne({ email });
 
       if (user) {
-        return res.status(400).json({ message: C.USERS_ALREADY_EXISTS });
+        return res
+          .status(400)
+          .json({ message: i18next.t('email_already_registered') });
       }
 
       const hashedPassword = await encryptPassword(password);
-      user = await User.create({
-        provider: 'local',
-        status: 'signed-up',
+      const newUser: IUser = {
         name,
         email,
-        hashedPassword,
-      });
+        password: hashedPassword,
+      };
+      user = await User.create(newUser);
       req.user = user;
-      logger.info(`new user signed up ${email}`);
-      const [response] = await sendMail(user);
-      if (response.statusCode === 202) {
-        logger.debug('email submitted');
+
+      const payload = {
+        user: {
+          id: user.id,
+        },
+      };
+
+      assertIsString(process.env.CONFIRMATION_SECRET);
+      const confirmationSecret = process.env.CONFIRMATION_SECRET;
+      const token = await jwt.sign(payload, confirmationSecret!, {
+        expiresIn: '12h',
+      });
+
+      // Check if not token
+      if (!token) {
+        return res.status(401).json({ msg: 'No token, authorization denied' });
       }
+
+      const link =
+        process.env.NODE_ENV === 'production'
+          ? `https://${req.headers.host}/confirmation/${token}`
+          : `http://localhost:3000/confirmation/${token}`;
+
+      const subject = req.t('verification_email.subject');
+      const values: object = req.t('verification_email.body', {
+        returnObjects: true,
+        name,
+      });
+      const html = compiledTemplate({ link, ...values });
+
+      const msg = {
+        from: 'noreply@taalmap.nl',
+        to: user.email,
+        subject,
+        html,
+      };
+
+      assertIsString(process.env.SENDGRID_API_KEY);
+      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+      await sgMail.send(msg);
+      logger.debug(`A verification email has been sent to ${user!.email}.`);
       next();
     } catch (err) {
       logger.error(err.message);
     }
   },
-  sendToken,
+  sendAuthToken,
 );
 
-authRouter.get('/', isAuthenticated, async (req: Request, res: Response) => {
+router.post('/confirmation', async (req: Request, res: Response) => {
+  const { token } = req.body;
+
+  try {
+    assertIsString(process.env.CONFIRMATION_SECRET);
+    const {
+      user: { id },
+    } = jwt.verify(token, process.env.CONFIRMATION_SECRET) as {
+      user: { id: string };
+    };
+
+    const user = await User.findById({ _id: id });
+
+    if (!user) {
+      return res
+        .status(400)
+        .json({ error: 'user-not-found', msg: req.t('user_not_found') });
+    }
+
+    if (user.verified) {
+      return res
+        .status(400)
+        .json({ error: 'already-verified', msg: req.t('already_verified') });
+    }
+
+    res.status(200).json({ msg: req.t('account_verified') });
+    user.verified = true;
+    await user.save();
+  } catch (err) {
+    logger.error(err.message);
+    if (err.name === 'TokenExpiredError') {
+      return res
+        .status(404)
+        .json({ error: 'token-expired', msg: req.t('token_expired') });
+    }
+    res.status(500).json({ error: 'server-error', msg: req.t('server_error') });
+  }
+});
+
+router.get('/', isAuthenticated, async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.sendStatus(401);
@@ -116,13 +210,13 @@ authRouter.get('/', isAuthenticated, async (req: Request, res: Response) => {
     }
     user.lastAccess = new Date();
     await user.save();
-    logger.info(`user ${user.email} (${user.status}) signed in`);
+    logger.info(`user ${user.email} signed in`);
     res.json(user);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-authRouter.use('*', (req: Request, res: Response) => res.sendStatus(404));
+router.use('*', (req: Request, res: Response) => res.sendStatus(404));
 
-export default authRouter;
+export default router;

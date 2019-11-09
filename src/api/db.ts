@@ -122,7 +122,9 @@ export function getArticleTopics(publication: string) {
 
 export async function getArticle(filename: string) {
   const topic = await Topic.findOne({ filename }).lean();
-  topic.lemmas = await Lemma.find({ topic: topic._id });
+  if (topic) {
+    topic.lemmas = await Lemma.find({ topic: topic._id });
+  }
   return topic;
 }
 

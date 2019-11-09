@@ -4,6 +4,9 @@ import compression from 'compression';
 import cors from 'cors';
 import exitHook from 'exit-hook';
 import express from 'express';
+import i18next from 'i18next';
+import i18middleware from 'i18next-express-middleware';
+import FSBackend from 'i18next-node-fs-backend';
 import morgan from 'morgan';
 import passport from 'passport';
 import path from 'path';
@@ -12,6 +15,7 @@ import * as content from './api/content';
 import authRouter from './auth';
 import connectDB from './config/db';
 import logger from './config/logger';
+import localesRouter from './locales';
 
 const PORT = 8080; // default port to listen
 
@@ -34,6 +38,21 @@ const clientPath =
 
 const docRoot = path.resolve(__dirname, clientPath);
 
+i18next
+  .use(FSBackend)
+  .use(i18middleware.LanguageDetector)
+  .init({
+    backend: {
+      loadPath: path.join(__dirname, '/../locales/{{lng}}/{{ns}}.json'),
+      addPath: path.join(__dirname, '/../locales/{{lng}}/{{ns}}.missing.json'),
+    },
+    fallbackLng: 'en',
+    ns: ['server'],
+    defaultNS: 'server',
+    preload: ['en'],
+    saveMissing: true,
+  });
+
 (async () => {
   await connectDB();
   const app = express();
@@ -42,14 +61,18 @@ const docRoot = path.resolve(__dirname, clientPath);
   app.use(morgan('dev'));
   app.use(express.json());
   app.use(express.static(docRoot, staticOptions));
+  app.use(i18middleware.handle(i18next));
   app.use(passport.initialize());
 
   app.use('/api', apiRouter);
   app.use('/auth', authRouter);
+  app.use('/locales', localesRouter);
 
-  app
-    .route('/*')
-    .get((req, res) => res.sendFile('index.html', { root: docRoot }));
+  if (process.env.NODE_ENV === 'production') {
+    app
+      .route('/*')
+      .get((req, res) => res.sendFile('index.html', { root: docRoot }));
+  }
 
   app.listen(PORT, async () => {
     logger.info('---------------------------------------');

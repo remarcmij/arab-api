@@ -1,12 +1,12 @@
 import mongoose from 'mongoose';
 import logger from '../config/logger';
-import { assertEnvVar } from '../util';
+import { assertIsString } from '../util';
 import seed from './seed';
 
 const connectDB = async () => {
   try {
-    assertEnvVar('MONGO_CONNECT_STRING');
-    await mongoose.connect(process.env.MONGO_CONNECT_STRING!, {
+    assertIsString(process.env.MONGO_CONNECT_STRING);
+    await mongoose.connect(process.env.MONGO_CONNECT_STRING, {
       useNewUrlParser: true,
       useCreateIndex: true,
       useUnifiedTopology: true,
