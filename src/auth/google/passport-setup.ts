@@ -3,7 +3,7 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import logger from '../../config/logger';
-import User, { AuthStatus, IUser, IUserDocument } from '../../models/User';
+import User, { IUser, IUserDocument } from '../../models/User';
 import { assertIsString } from '../../util';
 import { sendMail } from '../auth-service';
 
@@ -31,22 +31,25 @@ async function verify(
         0: { value: email },
       },
     } = profile;
-    const photo =
-      (profile.photos && profile.photos[0] && profile.photos[0].value) ?? '';
+    const photo = profile.photos?.[0].value ?? '';
     let user = await User.findOne({ email });
     if (!user) {
       const userInfo: IUser = {
         email,
         name: displayName,
-        status: AuthStatus.Registered,
         photo,
         verified: true,
-        isAdmin: false,
       };
       user = await new User(userInfo).save();
       logger.info(`new Google user signed in: ${user.email}`);
       await sendMail(user);
     } else {
+      // Update user document with most recent profile data.
+      user.photo = photo;
+      user.name = displayName;
+      // If signed in with Google, the email address is verified by implication
+      user.verified = true;
+      await user.save();
       logger.debug(`existing Google user signed in: ${user.email}`);
     }
     cb(null, user);

@@ -1,11 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { Document, model, Schema } from 'mongoose';
 
-export const enum AuthStatus {
-  Registered = 'registered',
-  Authorized = 'authorized',
-}
-
 // ref: https://codemoto.io/coding/nodejs/email-verification-node-express-mongodb
 
 declare global {
@@ -17,10 +12,10 @@ declare global {
       name: string;
       email: string;
       photo?: string;
-      hashedPassword?: string;
-      status: AuthStatus;
+      password?: string;
       verified?: boolean;
-      isAdmin?: boolean;
+      authorized?: boolean;
+      admin?: boolean;
       created?: Date;
       lastAccess?: Date;
     }
@@ -33,10 +28,10 @@ const userSchema = new Schema<IUser>({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   photo: { type: String, required: false },
-  status: { type: String, required: true }, // TODO: change to: active: {type: Boolean, default: false} ??
-  hashedPassword: { type: String, required: false },
+  password: { type: String, required: false },
   verified: { type: Boolean, default: false },
-  isAdmin: { type: Boolean, default: false },
+  authorized: { type: Boolean, default: false },
+  admin: { type: Boolean, default: false },
   created: { type: Date, default: Date.now },
   lastAccess: { type: Date, default: Date.now },
 });
@@ -49,10 +44,9 @@ export const encryptPassword = async (password: string) => {
 export const validatePassword = (password: string, hashedPassword: string) =>
   bcrypt.compare(password, hashedPassword);
 
-export const isAuthorized = (user?: IUser) =>
-  !!user && user.status === AuthStatus.Authorized;
+export const isAuthorized = (user?: IUser) => !!user?.authorized;
 
-export const isAdmin = (user: IUser) => user.isAdmin;
+export const isAdmin = (user: IUser) => user.admin;
 
 export interface IUserDocument extends Document, IUser {}
 

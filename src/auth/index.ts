@@ -2,16 +2,18 @@ import sgMail from '@sendgrid/mail';
 import express, { NextFunction, Request, Response } from 'express';
 import { body, validationResult } from 'express-validator/check';
 import { sanitizeBody } from 'express-validator/filter';
+import i18next from 'i18next';
 import jwt from 'jsonwebtoken';
 import _template from 'lodash.template';
 import passport from 'passport';
 import logger from '../config/logger';
-import * as C from '../constants';
-import User, { AuthStatus, encryptPassword, IUser } from '../models/User';
+import User, { encryptPassword, IUser } from '../models/User';
 import { assertIsString } from '../util';
 import { isAuthenticated, sendAuthToken, setTokenCookie } from './auth-service';
 import emailTemplate from './email-template';
 import './google/passport-setup';
+
+const PASSWORD_MIN_LENGTH = 8;
 
 const compiledTemplate = _template(emailTemplate);
 
@@ -40,16 +42,16 @@ router
 router.post(
   '/login',
   [
-    body('email', C.EMAIL_ADDRESS_REQUIRED).isEmail(),
+    body('email', i18next.t('email_required')).isEmail(),
     sanitizeBody('email').normalizeEmail(),
-    body('password', C.PASSWORD_REQUIRED)
+    body('password', i18next.t('password_required'))
       .not()
       .isEmpty(),
   ],
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(422).json({ errors: errors.array() });
     }
     passport.authenticate('local', (err, user, info) => {
       const error = err ?? info;
@@ -58,7 +60,7 @@ router.post(
       }
       if (!user) {
         return void res.status(401).json({
-          message: C.SOMETHING_WENT_WRONG,
+          message: i18next.t('something_went_wrong'),
         });
       }
       req.user = user;
@@ -71,13 +73,16 @@ router.post(
 router.post(
   '/signup',
   [
-    body('name', C.NAME_REQUIRED)
+    body('name', i18next.t('user_name_required'))
       .not()
       .isEmpty(),
-    body('email', C.EMAIL_ADDRESS_INVALID).isEmail(),
+    body('email', i18next.t('email_required')).isEmail(),
     sanitizeBody('email').normalizeEmail(),
-    body('password', C.PASSWORD_MIN_LENGTH).isLength({
-      min: 8,
+    body(
+      'password',
+      i18next.t('password_min_length', { minLength: PASSWORD_MIN_LENGTH }),
+    ).isLength({
+      min: PASSWORD_MIN_LENGTH,
     }),
   ],
   async (req: Request, res: Response, next: NextFunction) => {
@@ -91,15 +96,16 @@ router.post(
       let user = await User.findOne({ email });
 
       if (user) {
-        return res.status(400).json({ message: C.USERS_ALREADY_EXISTS });
+        return res
+          .status(400)
+          .json({ message: i18next.t('email_already_registered') });
       }
 
       const hashedPassword = await encryptPassword(password);
       const newUser: IUser = {
-        status: AuthStatus.Registered,
         name,
         email,
-        hashedPassword,
+        password: hashedPassword,
       };
       user = await User.create(newUser);
       req.user = user;
@@ -204,7 +210,7 @@ router.get('/', isAuthenticated, async (req: Request, res: Response) => {
     }
     user.lastAccess = new Date();
     await user.save();
-    logger.info(`user ${user.email} (${user.status}) signed in`);
+    logger.info(`user ${user.email} signed in`);
     res.json(user);
   } catch (err) {
     res.status(500).json({ error: err.message });

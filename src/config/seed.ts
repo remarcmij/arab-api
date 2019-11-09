@@ -1,4 +1,4 @@
-import User, { AuthStatus, encryptPassword, IUser } from '../models/User';
+import User, { encryptPassword, IUser } from '../models/User';
 import { assertIsString } from '../util';
 import logger from './logger';
 
@@ -12,12 +12,12 @@ export default async () => {
     if (!user) {
       const hashedPassword = await encryptPassword(process.env.ADMIN_PASSWORD);
       const adminUser: IUser = {
-        status: AuthStatus.Authorized,
         name: 'Admin',
         email: process.env.ADMIN_EMAIL!,
-        hashedPassword,
+        password: hashedPassword,
         verified: true,
-        isAdmin: true,
+        authorized: true,
+        admin: true,
       };
       await User.create(adminUser);
       logger.info('created admin user');

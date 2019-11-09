@@ -69,7 +69,7 @@ export const isAuthenticated = compose([
 export const isAdmin = compose([
   isAuthenticated,
   (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user!.isAdmin) {
+    if (!req.user!.admin) {
       return res.status(403).json({ message: 'Forbidden' });
     }
     next();
@@ -108,6 +108,9 @@ export const sendAuthToken = (req: Request, res: Response) => {
   res.json({ token });
 };
 
+// TODO: send an email to the admin when an account is
+// verified so that it can be considered for authorization.
+// Email content to be revised.
 export const sendMail = (user: IUser) => {
   assertIsString(process.env.SENDGRID_API_KEY);
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);

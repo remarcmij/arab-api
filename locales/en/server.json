@@ -7,12 +7,21 @@
       "opening": "Thanks for your registration!",
       "prompt": "Please verify your account by clicking:",
       "buttonText": "Here",
-      "closing": "Kind Regards,<br>Team Study Buddy Arabic"
+      "closing": "Kind Regards,<br>Team Study Aid Arabic"
     }
   },
   "account_verified": "Your account has been verified. Please log in.",
   "already_verified": "This user has already been verified.",
+  "email_already_registered": "This email address is already registered.",
+  "email_required": "An email address is required",
+  "invalid_credentials": "Email address or password is invalid.",
+  "password_min_length": "A password should have at least {{minLength}} characters.",
+  "password_required": "A password is required.",
+  "server_error": "Server error",
+  "something_went_wrong": "Something went wrong.",
   "token_expired": "The verification link has expired.",
-  "user_not_found": "We were unable to find a matching user for this request.",
-  "server_error": "Server error"
+  "unauthorized": "Unauthorized",
+  "unexpected_error": "The server encountered an unexpected error.",
+  "user_name_required": "A user name is required",
+  "user_not_found": "We were unable to find a matching user for this request."
 }
