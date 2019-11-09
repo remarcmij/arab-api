@@ -4,16 +4,21 @@
     "SENDGRID",
     "Tashkeel",
     "Transcoder",
+    "clickaway",
     "clsx",
     "dotfiles",
     "etag",
+    "languagedetector",
     "maxsize",
+    "noreply",
     "openid",
     "printf",
     "shhh",
+    "signin",
     "stemword",
     "strikethrough",
     "subfolder",
+    "taalmap",
     "taskqueue",
     "typesafe",
     "wordlist"
@@ -26,5 +31,18 @@
     ".vscode",
     "typings",
     "*.md"
-  ]
+  ],
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    {
+      "language": "typescript",
+      "autoFix": true
+    },
+    {
+      "language": "typescriptreact",
+      "autoFix": true
+    }
+  ],
+  "typescript.tsdk": "node_modules\\typescript\\lib"
 }

@@ -1,6 +1,7 @@
+import i18next from 'i18next';
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
-import * as C from '../../constants';
+import logger from '../../config/logger';
 import User, { validatePassword as comparePassword } from '../../models/User';
 
 passport.use(
@@ -13,16 +14,17 @@ passport.use(
       try {
         const user = await User.findOne({ email });
         if (!user) {
+          logger.info(`${email}: login user not found`);
           return void done(null, false, {
-            message: C.INVALID_CREDENTIALS,
+            message: i18next.t('invalid_credentials'),
           });
         }
         const validated =
-          !!user.hashedPassword &&
-          (await comparePassword(password, user.hashedPassword));
+          !!user.password && (await comparePassword(password, user.password));
         if (!validated) {
+          logger.info(`${user.email}: invalid login password`);
           return done(null, false, {
-            message: C.INVALID_CREDENTIALS,
+            message: i18next.t('invalid_credentials'),
           });
         }
         return done(null, user);

@@ -4,7 +4,7 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import logger from '../../config/logger';
 import User, { IUser, IUserDocument } from '../../models/User';
-import { assertEnvVar } from '../../util';
+import { assertIsString } from '../../util';
 import { sendMail } from '../auth-service';
 
 interface IGoogleProfile {
@@ -31,23 +31,25 @@ async function verify(
         0: { value: email },
       },
     } = profile;
-    const photo =
-      (profile.photos && profile.photos[0] && profile.photos[0].value) || '';
+    const photo = profile.photos?.[0].value ?? '';
     let user = await User.findOne({ email });
     if (!user) {
       const userInfo: IUser = {
         email,
         name: displayName,
-        status: 'registered',
         photo,
-        provider: 'google',
         verified: true,
-        isAdmin: false,
       };
       user = await new User(userInfo).save();
       logger.info(`new Google user signed in: ${user.email}`);
       await sendMail(user);
     } else {
+      // Update user document with most recent profile data.
+      user.photo = photo;
+      user.name = displayName;
+      // If signed in with Google, the email address is verified by implication
+      user.verified = true;
+      await user.save();
       logger.debug(`existing Google user signed in: ${user.email}`);
     }
     cb(null, user);
@@ -58,13 +60,13 @@ async function verify(
 
 passport.use(
   (() => {
-    assertEnvVar('GOOGLE_CLIENT_ID');
-    assertEnvVar('GOOGLE_CLIENT_SECRET');
+    assertIsString(process.env.GOOGLE_CLIENT_ID);
+    assertIsString(process.env.GOOGLE_CLIENT_SECRET);
     return new GoogleStrategy<IGoogleProfile, IUserDocument>(
       {
         callbackURL: '/auth/google/callback',
-        clientID: process.env.GOOGLE_CLIENT_ID!,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+        clientID: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       },
       verify,
     );
