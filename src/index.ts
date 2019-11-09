@@ -78,7 +78,6 @@ i18next
     logger.info('---------------------------------------');
     try {
       await content.syncContent();
-      await content.dbContentCleanup();
 
       logger.info(`server started at http://localhost:${PORT}`);
     } catch (err) {

@@ -6,13 +6,12 @@ import path from 'path';
 import util from 'util';
 import logger from '../config/logger';
 import { ILemma } from '../models/Lemma';
-import Topic, { ITopic } from '../models/Topic';
+import { ITopic } from '../models/Topic';
 import * as db from './db';
 import { parseBody } from './parser';
 import TaskQueue from './TaskQueue';
 
 const glob = util.promisify(_glob);
-const removeFile = util.promisify(fs.unlink);
 const CONCURRENCY = 2;
 
 const taskQueue = new TaskQueue(CONCURRENCY, () => {
@@ -25,7 +24,6 @@ interface IAttributes {
   restricted: boolean;
 }
 
-const UPLOADS_CONTENT_DIR = path.join(__dirname, '../../content/');
 const CONTENT_DIR = path.join(
   __dirname,
   process.env.NODE_ENV === 'production'
@@ -96,7 +94,6 @@ export async function syncContent(contentDir = CONTENT_DIR) {
 }
 
 export function validateDocumentPayload(data: string) {
-  parseBody(data);
   const fmResult = fm<object>(data);
 
   const hasAttributes = !!Object.keys(fmResult.attributes).length;
@@ -109,68 +106,21 @@ export function validateDocumentPayload(data: string) {
     throw new Error('invalid empty markdown body file.');
   }
 
+  parseBody(fmResult.body);
+
   return fmResult;
 }
 
 export function validateDocumentName(file: { originalname: string }) {
-  const hasMDExtension = path.extname(file.originalname) === '.md';
-
-  if (!hasMDExtension) {
-    throw new Error(`can't upload a none markdown file.`);
-  }
-
-  const [, article] = file.originalname.split('.');
-
-  if (!article || article === 'md') {
-    throw new Error(`${file.originalname}: expected filename format <publication>.<article>.md.`);
-  }
+  const parts = file.originalname.split('.');
+  return parts.length === 3 || parts[2] === 'md';
 }
 
 export async function removeContentAndTopic(filename: string) {
-  let filePath = path.join(CONTENT_DIR, filename) + '.md';
-
-  let isFileExists = fs.existsSync(filePath);
-  if (!isFileExists) {
-    // if not exists, set a new file path with the uploads directory content.
-    filePath = path.join(UPLOADS_CONTENT_DIR, filename) + '.md';
-    isFileExists = fs.existsSync(filePath);
-  }
-
-  if (!isFileExists) {
-    // still no file?! abort!
-    throw new Error('No file with the specified name: ' + filename);
-  }
-
   const isDeleted = await db.deleteTopic(filename);
   if (!isDeleted) {
     throw new Error('topic not found with the name of: ' + filename);
   }
-  await removeFile(filePath);
-}
 
-export async function getAllContentFiles() {
-  const contentFilePaths = await glob(`${CONTENT_DIR}/*.md`);
-  const uploadsFilePaths = await glob(`${UPLOADS_CONTENT_DIR}/*.md`);
-
-  const filePaths = [...contentFilePaths, ...uploadsFilePaths];
-
-  const names = filePaths.map(filePath => path.basename(filePath, '.md'));
-
-  return {
-    names, filePaths,
-  };
-}
-
-export async function dbContentCleanup() {
-  try {
-    const topics = await Topic.find({});
-    const files = await getAllContentFiles();
-
-    const topicsWithNoFile = topics.filter(topic => !files.names.includes(topic.filename));
-
-    const promises = topicsWithNoFile.map(topic => db.deleteTopic(topic.filename));
-    await Promise.all(promises);
-  } catch (error) {
-    logger.error(error);
-  }
+  await fs.promises.unlink(path.join(CONTENT_DIR, filename) + '.md');
 }

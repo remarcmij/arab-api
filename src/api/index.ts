@@ -1,4 +1,4 @@
-import express, { ErrorRequestHandler, NextFunction, Request, Response } from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import { check, validationResult } from 'express-validator/check';
 import i18next from 'i18next';
 import multer from 'multer';
@@ -8,7 +8,6 @@ import logger from '../config/logger';
 import { ITopic } from '../models/Topic';
 import User, { isAuthorized } from '../models/User';
 import {
-  getAllContentFiles,
   removeContentAndTopic,
   syncContent,
   validateDocumentName,
@@ -18,6 +17,8 @@ import * as db from './db';
 
 import fs from 'fs';
 import path from 'path';
+import { ApiError } from '../util';
+import { sysErrorsHandler, userErrorsHandler } from './middleware/errors';
 
 const apiRouter = express.Router();
 const upload = multer();
@@ -33,12 +34,10 @@ const handleRequestErrors = (req: Request, res: Response): boolean => {
   return false;
 };
 
-const handleNodeFSErrors = (error: Error) => error.name.startsWith('ERR');
-
 /*
- * @oas [get] /api
- * description: Returns a list of publications topics
- */
+* @oas [get] /api
+* description: Returns a list of publications topics
+*/
 apiRouter.get('/', maybeAuthenticated, (req: Request, res: Response) => {
   db.getIndexTopics()
     .then(topics =>
@@ -48,58 +47,37 @@ apiRouter.get('/', maybeAuthenticated, (req: Request, res: Response) => {
 });
 
 apiRouter.post('/upload', isAdmin, upload.single('file'),
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     const data = req.file.buffer.toString('utf8');
     const destination = path.join(uploadContentDir, req.file.originalname);
     try {
 
-      validateDocumentName(req.file);
+      const isDocumentValidName = validateDocumentName(req.file);
+
+      if (!isDocumentValidName) {
+        throw new Error(
+          `can't upload none markdown or another filename structure than '<publication>.<chapter>.md'.`,
+        );
+      }
+
       validateDocumentPayload(data);
 
+      // todo: replace these two lines with MongoDB request.
       await fs.promises.writeFile(destination, data);
       await syncContent(uploadContentDir);
       res.sendStatus(200);
     } catch (error) {
-      const isFSError = handleNodeFSErrors(error);
-      if (isFSError) {
-        return res.status(500).json({ error: 'Oops! something went wrong.' });
-      }
-
-      res.status(400).json({ error: error.message });
+      next(new ApiError(400, error));
     }
   });
 
-apiRouter.delete('/remove-topic/:filename', isAdmin,
-  async (req: Request, res: Response) => {
+apiRouter.delete('/topic/:filename', isAdmin,
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
       await removeContentAndTopic(req.params.filename);
       res.sendStatus(200);
     } catch (error) {
-      const isFSError = handleNodeFSErrors(error);
-      if (isFSError) {
-        return res.status(500).json({ error: 'Oops! something went wrong.' });
-      }
-
-      res.status(400).json({ error: error.message });
-    }
-  });
-
-apiRouter.get('/sync-content', isAdmin,
-  async (req: Request, res: Response) => {
-    try {
-      const { names: filenames } = await getAllContentFiles();
-
-      await syncContent(uploadContentDir);
-      await syncContent();
-
-      res.status(200).json(filenames);
-    } catch (error) {
-      const isFSError = handleNodeFSErrors(error);
-      if (isFSError) {
-        return res.status(500).json({ error: 'Oops! something went wrong.' });
-      }
-
-      res.status(400).json({ error: error.message });
+      next(new ApiError(400, error));
     }
   });
 
@@ -213,11 +191,9 @@ apiRouter.get(
   },
 );
 
+// Error Handling!
 apiRouter.use('*', (req: Request, res: Response) => res.sendStatus(404));
 
-apiRouter.use((error: ErrorRequestHandler & Error, req: Request, res: Response, next: NextFunction) => {
-  // handling any unexpected middleware libraries error.
-  res.status(500).json({ error: 'Oops! Something went wrong.' });
-});
+apiRouter.use(sysErrorsHandler, userErrorsHandler);
 
 export default apiRouter;
