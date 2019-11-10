@@ -1,42 +1,34 @@
-import { ErrorRequestHandler, NextFunction, Request, Response } from 'express';
-import logger from '../../config/logger';
-import { IApiError, isSystemError } from '../../util';
+import { ErrorRequestHandler } from 'express';
 import i18next from 'i18next';
+import logger from '../../config/logger';
+import { isSystemError, AppError } from '../../util';
 
-export const sysErrorsHandler =
-  (error: ErrorRequestHandler & IApiError, req: Request, res: Response, next: NextFunction) => {
+export const sysErrorsHandler: ErrorRequestHandler = (
+  error,
+  req,
+  res,
+  next,
+) => {
+  logger.error(`${error.name}: ${error.logMsg ?? error.message}`);
 
-    if (error.logger) {
-      const loggerLevel = error.logger.level;
-      logger[loggerLevel!](error.logger);
-    }
+  if (isSystemError(error)) {
+    return void res.status(500).json({ message: i18next.t('server_error') });
+  }
 
-    const hasSysError = isSystemError(error);
-    if (error.error instanceof Error) {
-      if (hasSysError) {
-        return void res.status(500).json({ message: i18next.t('server_error') });
-      }
-    }
+  if (error instanceof AppError) {
+    return void next(error);
+  }
 
-    if (!error.status) {
-      return void res.status(500).json({ message: i18next.t('unexpected_error') });
-    }
+  // handling any unexpected library/system errors.
+  res.status(500).json({ message: i18next.t('server_error') });
+};
 
-    if (!error.status && !hasSysError) {
-      logger.error('Unexpected development error, please report via Github.');
-      return void res.status(500).json({ message: i18next.t('unexpected_error') });
-    }
-
-    if (!hasSysError && error.status > 100 && error.status < 500) {
-      return void next(error);
-    }
-
-    // handling any unexpected library/system errors.
-    res.status(500).json({ message: i18next.t('server_error') });
-  };
-
-export const userErrorsHandler =
-  (error: ErrorRequestHandler & IApiError, req: Request, res: Response) => {
-    const errorMessage = i18next.t(error.message) || i18next.t('unknown_error');
-    return void res.status(error.status).json({ message: errorMessage });
-  };
+export const userErrorsHandler: ErrorRequestHandler = (
+  error,
+  _req,
+  res,
+  _next,
+) => {
+  const status: number = error.status ?? 500;
+  res.status(status).json({ message: error.message ?? error.logMsg });
+};
