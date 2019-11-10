@@ -6,6 +6,8 @@ declare module 'util' {
   function getSystemErrorName(errno: number): string;
 }
 
+export class AppError extends Error {}
+
 export interface IApiError extends Error {
   status: number;
   error?: Error | null;
@@ -21,7 +23,7 @@ export function assertIsString(val: unknown): asserts val is string {
 }
 
 /**
- * 
+ *
  * Usage @example:
  * ```
  *  const e = new Error('message')
@@ -41,7 +43,7 @@ export function assertIsString(val: unknown): asserts val is string {
  *  apiErrorObject.error   // Error Object
  *  apiErrorObject.status  // 500
  * ```
- * 
+ *
  * Usage @example:
  * ```
  *  const e = new Error('message')
@@ -51,7 +53,7 @@ export function assertIsString(val: unknown): asserts val is string {
  *  apiErrorObject.error   // Error Object
  *  apiErrorObject.status  // 404
  * ```
- * 
+ *
  * Usage @example:
  * ```
  *  const e = new Error('message')
@@ -61,7 +63,7 @@ export function assertIsString(val: unknown): asserts val is string {
  *  apiErrorObject.error   // Error Object
  *  apiErrorObject.status  // 404
  * ```
- * 
+ *
  * Usage @example:
  * ```
  *  const apiErrorObject = new ApiError(404, { message: 'what ever', level: 'debug' })
@@ -70,7 +72,7 @@ export function assertIsString(val: unknown): asserts val is string {
  *  apiErrorObject.error   // null
  *  apiErrorObject.status  // 404
  * ```
- * 
+ *
  * Usage @example:
  * ```
  *  const apiErrorObject = new ApiError(404, 'message')
@@ -79,7 +81,7 @@ export function assertIsString(val: unknown): asserts val is string {
  *  apiErrorObject.error   // null
  *  apiErrorObject.status  // 404
  * ```
- * 
+ *
  * Usage @example:
  * ```
  *  const apiErrorObject = new ApiError(404, 'message', { message: 'what ever', level: 'error' })
@@ -102,10 +104,12 @@ export class ApiError extends Error implements IApiError {
   constructor(status: number, logger: IApiError['logger']);
   constructor(status: number, message: string);
   constructor(status: number, message: string, logger: IApiError['logger']);
-  constructor(x: number | Error, y?: string | Error | IApiError['logger'], z?: IApiError['logger']) {
-
+  constructor(
+    x: number | Error,
+    y?: string | Error | IApiError['logger'],
+    z?: IApiError['logger'],
+  ) {
     if (typeof x === 'number') {
-
       super(typeof y === 'string' ? y : undefined);
       this.status = x;
       this.error = y instanceof Error ? y : null;
@@ -130,7 +134,6 @@ export class ApiError extends Error implements IApiError {
           this.logger = y;
         }
       }
-
     } else {
       super(x.message);
       super.name = x.name;
@@ -153,7 +156,6 @@ export class ApiError extends Error implements IApiError {
     } else {
       this.logger = null;
     }
-
   }
 }
 
@@ -165,7 +167,9 @@ export const isSystemError = (error: Error & { errno?: number }) => {
       // system errors doesn't have spaces in their code names!
       // so if there is a space it's gonna be out of 'Unknown system error <negative-number>'
       hasSystemErrorName = !/[^ ]/.test(errorName);
-    } catch (error) {/* error thrown? then it's not a system error!. */ }
+    } catch (error) {
+      /* error thrown? then it's not a system error!. */
+    }
   }
   return hasSystemErrorName;
 };

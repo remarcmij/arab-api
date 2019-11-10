@@ -6,6 +6,8 @@ import i18next from 'i18next';
 import jwt from 'jsonwebtoken';
 import _template from 'lodash.template';
 import passport from 'passport';
+import { ApiError } from '../api/ApiError';
+// import { sysErrorsHandler, userErrorsHandler } from '../api/middleware/errors';
 import logger from '../config/logger';
 import User, { encryptPassword, IUser } from '../models/User';
 import { assertIsString } from '../util';
@@ -48,20 +50,23 @@ router.post(
       .not()
       .isEmpty(),
   ],
-  (req: Request, res: Response, next: NextFunction) => {
+  (req: Request, res: Response, next: NextFunction): void => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(422).json({ errors: errors.array() });
+      return void res.status(422).json({ errors: errors.array() });
     }
-    passport.authenticate('local', (err, user, info) => {
+    passport.authenticate('local', (err, user, info): void => {
       const error = err ?? info;
       if (error) {
-        return void res.status(422).json(error);
+        return next(error);
       }
       if (!user) {
-        return void res.status(401).json({
-          message: i18next.t('something_went_wrong'),
-        });
+        return next(
+          new ApiError({
+            status: 401,
+            i18nKey: 'something_went_wrong',
+          }),
+        );
       }
       req.user = user;
       next();

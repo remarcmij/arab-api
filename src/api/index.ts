@@ -1,12 +1,18 @@
 import express, { NextFunction, Request, Response } from 'express';
 import { check, validationResult } from 'express-validator/check';
-import i18next from 'i18next';
+import fs from 'fs';
 import multer from 'multer';
-import { isAdmin, isAuthenticated, maybeAuthenticated } from '../auth/auth-service';
+import path from 'path';
+import {
+  isAdmin,
+  isAuthenticated,
+  maybeAuthenticated,
+} from '../auth/auth-service';
 import '../auth/local/passport-setup';
 import logger from '../config/logger';
 import { ITopic } from '../models/Topic';
 import User, { isAuthorized } from '../models/User';
+import { ApiError } from './ApiError';
 import {
   removeContentAndTopic,
   syncContent,
@@ -14,11 +20,6 @@ import {
   validateDocumentPayload,
 } from './content';
 import * as db from './db';
-
-import fs from 'fs';
-import path from 'path';
-import { ApiError } from '../util';
-import { sysErrorsHandler, userErrorsHandler } from './middleware/errors';
 
 const apiRouter = express.Router();
 const upload = multer();
@@ -35,9 +36,9 @@ const handleRequestErrors = (req: Request, res: Response): boolean => {
 };
 
 /*
-* @oas [get] /api
-* description: Returns a list of publications topics
-*/
+ * @oas [get] /api
+ * description: Returns a list of publications topics
+ */
 apiRouter.get('/', maybeAuthenticated, (req: Request, res: Response) => {
   db.getIndexTopics()
     .then(topics =>
@@ -46,18 +47,22 @@ apiRouter.get('/', maybeAuthenticated, (req: Request, res: Response) => {
     .then(topics => res.json(topics));
 });
 
-apiRouter.post('/upload', isAdmin, upload.single('file'),
+apiRouter.post(
+  '/upload',
+  // isAdmin,
+  upload.single('file'),
   async (req: Request, res: Response, next: NextFunction) => {
     const data = req.file.buffer.toString('utf8');
     const destination = path.join(uploadContentDir, req.file.originalname);
     try {
-
       const isDocumentValidName = validateDocumentName(req.file);
 
       if (!isDocumentValidName) {
-        throw new Error(
-          `can't upload none markdown or another filename structure than '<publication>.<chapter>.md'.`,
-        );
+        throw new ApiError({
+          status: 400,
+          i18nKey: 'invalid_upload_filename',
+          logMsg: `upload: invalid filename ${req.file.originalname}`,
+        });
       }
 
       validateDocumentPayload(data);
@@ -67,37 +72,50 @@ apiRouter.post('/upload', isAdmin, upload.single('file'),
       await syncContent(uploadContentDir);
       res.sendStatus(200);
     } catch (error) {
-      next(new ApiError(400, error));
+      if (error instanceof ApiError) {
+        next(error);
+      } else {
+        next(new ApiError({ status: 400, error }));
+      }
     }
-  });
+  },
+);
 
-apiRouter.delete('/topic/:filename', isAdmin,
+apiRouter.delete(
+  '/topic/:filename',
+  isAdmin,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       await removeContentAndTopic(req.params.filename);
       res.sendStatus(200);
     } catch (error) {
-      next(new ApiError(400, error));
+      next(new ApiError({ status: 400, error }));
     }
-  });
+  },
+);
 
 apiRouter.get(
   '/profile',
   isAuthenticated,
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
       const user = await User.findOne({ email: req.user!.email }).select(
         '-hashedPassword',
       );
       if (!user) {
-        return res.sendStatus(401);
+        return next(
+          new ApiError({
+            status: 401,
+            i18nKey: 'something_went_wrong',
+          }),
+        );
       }
       user.lastAccess = new Date();
       await user.save();
       logger.info(`user ${user.email} signed in`);
       res.json(user);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
+    } catch (error) {
+      next(new ApiError({ status: 500, error }));
     }
   },
 );
@@ -136,22 +154,30 @@ apiRouter.get(
   check('filename', 'filename is required')
     .not()
     .isEmpty(),
-  (req: Request, res: Response) => {
+  (req: Request, res: Response, next: NextFunction) => {
     if (handleRequestErrors(req, res)) {
       return;
     }
+    const user = req.user?.email ?? 'anonymous';
     const { filename } = req.params;
     db.getArticle(filename).then((topic: ITopic): void => {
       if (!topic) {
-        return void res
-          .status(404)
-          .json({ message: i18next.t('unexpected_error') });
+        return next(
+          new ApiError({
+            status: 404,
+            i18nKey: 'topic_not_found',
+            logMsg: `(${user}) topic not found: ${filename}`,
+          }),
+        );
       }
       if (topic.restricted && !isAuthorized(req.user)) {
-        logger.warn(`Attempt to access protected content`);
-        return void res
-          .status(401)
-          .json({ message: i18next.t('unauthorized') });
+        return next(
+          new ApiError({
+            status: 401,
+            i18nKey: 'unauthorized',
+            logMsg: `(${user}) unauthorized for restricted topic ${filename}`,
+          }),
+        );
       }
       res.json(topic);
     });
@@ -194,6 +220,6 @@ apiRouter.get(
 // Error Handling!
 apiRouter.use('*', (req: Request, res: Response) => res.sendStatus(404));
 
-apiRouter.use(sysErrorsHandler, userErrorsHandler);
+// apiRouter.use(sysErrorsHandler, userErrorsHandler);
 
 export default apiRouter;
