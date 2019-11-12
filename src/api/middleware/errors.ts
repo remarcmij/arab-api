@@ -9,13 +9,21 @@ export const sysErrorsHandler: ErrorRequestHandler = (
   res,
   next,
 ) => {
-  logger.error(`${error.name}: ${error.logMsg ?? error.message}`);
+  logger.error(`[${error.name}]: ${error.logMsg ?? error.message}`);
 
   if (isSystemError(error)) {
     return void res.status(500).json({ message: i18next.t('server_error') });
   }
 
   if (error instanceof AppError) {
+    return void next(error);
+  }
+
+  if (error.status ?? error.statusCode) {
+    // any libraries using a `status` or `statusCode` mechanism as:
+    // i18next, passport.
+    error.status =
+      typeof error.status === 'number' ? error.status : error.statusCode;
     return void next(error);
   }
 

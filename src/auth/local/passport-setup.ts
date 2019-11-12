@@ -38,7 +38,12 @@ passport.use(
         }
         return done(null, user);
       } catch (err) {
-        done(err);
+        done(
+          new ApiError({
+            error: err,
+            status: 500,
+          }),
+        );
       }
     },
   ),

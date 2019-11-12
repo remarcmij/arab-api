@@ -5,6 +5,7 @@ import expressJwt from 'express-jwt';
 import jwt from 'jsonwebtoken';
 import User, { IUser } from '../models/User';
 import { assertIsString } from '../util';
+import { ApiError } from '../api/ApiError';
 
 const EXPIRES_IN_SECONDS = 30 * 24 * 60 * 60; // 30 days * hours * minutes * seconds
 
@@ -29,40 +30,56 @@ export const maybeAuthenticated = compose([
         // from database.
         const user = await User.findById(req.user.id);
         if (user == null) {
-          return void res.status(401).json({ message: `User doesn't exist` });
+          throw new ApiError({
+            status: 401,
+            i18nKey: 'unknown_user',
+          });
         }
         req.user = user;
       }
       next();
-    } catch (err) {
-      return void res.status(401).json({ message: 'Invalid token' });
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return void next(error);
+      }
+      next(
+        new ApiError({
+          i18nKey: 'invalid_token',
+          status: 401,
+          logMsg: `id (${req.user?.id ?? 'anonymous'}) user requested: ${
+            error.message
+          }`,
+        }),
+      );
     }
   },
 ]);
-
-interface IError extends Error {
-  status?: number;
-}
 
 export const isAuthenticated = compose([
   validateJwt,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const user = await User.findById(req.user!.id);
+      const user = await User.findById(req.user?.id);
       if (!user) {
-        return res.status(401).json({ message: `User doesn't exist` });
+        throw new ApiError({
+          status: 401,
+          i18nKey: 'unknown_user',
+        });
       }
       req.user = user;
       next();
-    } catch (err) {
-      return res.status(500).json(err);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return void next(error);
+      }
+      return void next(
+        new ApiError({
+          status: 500,
+          i18nKey: 'server_error',
+          logMsg: `id (${req.user?.id}) user requested: ${error.message}`,
+        }),
+      );
     }
-  },
-  async (err: IError, _req: Request, res: Response, _next: NextFunction) => {
-    if (typeof err.status !== 'undefined') {
-      return res.status(err.status).json(err);
-    }
-    return res.status(500).json(err);
   },
 ]);
 
@@ -70,7 +87,12 @@ export const isAdmin = compose([
   isAuthenticated,
   (req: Request, res: Response, next: NextFunction) => {
     if (!req.user!.admin) {
-      return res.status(403).json({ message: 'Forbidden' });
+      return void next(
+        new ApiError({
+          status: 403,
+          i18nKey: 'forbidden',
+        }),
+      );
     }
     next();
   },
@@ -84,11 +106,18 @@ const signToken = (id: string): string =>
 /**
  * Set token cookie directly for oAuth strategies
  */
-export const setTokenCookie = (req: Request, res: Response) => {
+export const setTokenCookie = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   if (!req.user) {
-    return res
-      .status(404)
-      .json({ message: 'Something went wrong, please try again.' });
+    return void next(
+      new ApiError({
+        status: 404,
+        i18nKey: 'something_went_wrong',
+      }),
+    );
   }
   const token = signToken(req.user.id);
   res.cookie('token', JSON.stringify(token));
@@ -98,11 +127,18 @@ export const setTokenCookie = (req: Request, res: Response) => {
   res.redirect(redirectUrl);
 };
 
-export const sendAuthToken = (req: Request, res: Response) => {
+export const sendAuthToken = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   if (!req.user) {
-    return res
-      .status(404)
-      .json({ message: 'Something went wrong, please try again.' });
+    return void next(
+      new ApiError({
+        status: 404,
+        i18nKey: 'something_went_wrong',
+      }),
+    );
   }
   const token = signToken(req.user.id);
   res.json({ token });

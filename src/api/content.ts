@@ -10,6 +10,7 @@ import { ITopic } from '../models/Topic';
 import * as db from './db';
 import { parseBody } from './parser';
 import TaskQueue from './TaskQueue';
+import { AppError } from '../util';
 
 const glob = util.promisify(_glob);
 const CONCURRENCY = 2;
@@ -98,12 +99,12 @@ export function validateDocumentPayload(data: string) {
 
   const hasAttributes = !!Object.keys(fmResult.attributes).length;
   if (!hasAttributes) {
-    throw new Error('invalid empty markdown head file.');
+    throw new AppError('invalid empty markdown head file.');
   }
 
-  const hasBody = !!fmResult.body.replace(/\r?\n/ig, '').trim();
+  const hasBody = !!fmResult.body.replace(/\r?\n/gi, '').trim();
   if (!hasBody) {
-    throw new Error('invalid empty markdown body file.');
+    throw new AppError('invalid empty markdown body file.');
   }
 
   parseBody(fmResult.body);
@@ -119,7 +120,7 @@ export function validateDocumentName(file: { originalname: string }) {
 export async function removeContentAndTopic(filename: string) {
   const isDeleted = await db.deleteTopic(filename);
   if (!isDeleted) {
-    throw new Error('topic not found with the name of: ' + filename);
+    throw new AppError('topic not found with the name of: ' + filename);
   }
 
   await fs.promises.unlink(path.join(CONTENT_DIR, filename) + '.md');

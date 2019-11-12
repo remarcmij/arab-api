@@ -6,7 +6,9 @@ declare module 'util' {
   function getSystemErrorName(errno: number): string;
 }
 
-export class AppError extends Error {}
+export class AppError extends Error {
+  name = 'AppError'
+}
 
 // JS.
 export function assertIsString(val: unknown): asserts val is string {
