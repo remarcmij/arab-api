@@ -27,6 +27,7 @@
   "register": "Register",
   "transcription_system": "Transcription",
   "unknown_error": "An unknown error occurred.",
+  "upload_content": "Upload content",
   "validation_errors": "The server received invalid input.",
   "voice_name": "Voice"
 }

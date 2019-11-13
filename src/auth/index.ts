@@ -208,7 +208,7 @@ router.get('/', isAuthenticated, async (req: Request, res: Response) => {
       return res.sendStatus(401);
     }
     const user = await User.findOne({ email: req.user.email }).select(
-      '-hashedPassword',
+      '-password',
     );
     if (!user) {
       return res.sendStatus(401);

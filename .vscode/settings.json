@@ -1,5 +1,6 @@
 {
   "cSpell.words": [
+    "Dropzone",
     "Romanization",
     "SENDGRID",
     "Tashkeel",
@@ -12,15 +13,18 @@
     "maxsize",
     "noreply",
     "openid",
+    "originalname",
     "printf",
     "shhh",
     "signin",
     "stemword",
     "strikethrough",
     "subfolder",
+    "svgrepo",
     "taalmap",
     "taskqueue",
     "typesafe",
+    "uuidv",
     "wordlist"
   ],
   "cSpell.ignorePaths": [

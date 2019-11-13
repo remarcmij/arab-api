@@ -49,12 +49,13 @@ apiRouter.get('/', maybeAuthenticated, (req: Request, res: Response) => {
 
 apiRouter.post(
   '/upload',
-  // isAdmin,
+  isAdmin,
   upload.single('file'),
   async (req: Request, res: Response, next: NextFunction) => {
     const data = req.file.buffer.toString('utf8');
     const destination = path.join(uploadContentDir, req.file.originalname);
     try {
+      console.log('req.file', req.file);
       const isDocumentValidName = validateDocumentName(req.file);
 
       if (!isDocumentValidName) {
@@ -65,11 +66,11 @@ apiRouter.post(
         });
       }
 
-      validateDocumentPayload(data);
+      // validateDocumentPayload(data);
 
       // todo: replace these two lines with MongoDB request.
-      await fs.promises.writeFile(destination, data);
-      await syncContent(uploadContentDir);
+      // await fs.promises.writeFile(destination, data);
+      // await syncContent(uploadContentDir);
       res.sendStatus(200);
     } catch (error) {
       if (error instanceof ApiError) {
