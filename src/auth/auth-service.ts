@@ -24,13 +24,14 @@ const validateOptionalJwt = expressJwt({
 export const maybeAuthenticated = compose([
   validateOptionalJwt,
   async (req: Request, res: Response, next: NextFunction) => {
+    const errorHandler = new ApiError(next);
     try {
       if (req.user) {
         // Try and replace JWT user info with full info
         // from database.
         const user = await User.findById(req.user.id);
         if (user == null) {
-          throw new ApiError({
+          return void errorHandler.passToNext({
             status: 401,
             i18nKey: 'unknown_user',
           });
@@ -39,18 +40,13 @@ export const maybeAuthenticated = compose([
       }
       next();
     } catch (error) {
-      if (error instanceof ApiError) {
-        return void next(error);
-      }
-      next(
-        new ApiError({
-          i18nKey: 'invalid_token',
-          status: 401,
-          logMsg: `id (${req.user?.id ?? 'anonymous'}) user requested: ${
-            error.message
-          }`,
-        }),
-      );
+      errorHandler.passToNext({
+        i18nKey: 'invalid_token',
+        status: 401,
+        logMsg: `id (${req.user?.id ?? 'anonymous'}) user requested: ${
+          error.message
+        }`,
+      });
     }
   },
 ]);
@@ -58,10 +54,11 @@ export const maybeAuthenticated = compose([
 export const isAuthenticated = compose([
   validateJwt,
   async (req: Request, res: Response, next: NextFunction) => {
+    const errorHandler = new ApiError(next);
     try {
       const user = await User.findById(req.user?.id);
       if (!user) {
-        throw new ApiError({
+        return void errorHandler.passToNext({
           status: 401,
           i18nKey: 'unknown_user',
         });
@@ -69,16 +66,11 @@ export const isAuthenticated = compose([
       req.user = user;
       next();
     } catch (error) {
-      if (error instanceof ApiError) {
-        return void next(error);
-      }
-      return void next(
-        new ApiError({
-          status: 500,
-          i18nKey: 'server_error',
-          logMsg: `id (${req.user?.id}) user requested: ${error.message}`,
-        }),
-      );
+      errorHandler.passToNext({
+        status: 500,
+        i18nKey: 'server_error',
+        logMsg: `id (${req.user?.id}) user requested: ${error.message}`,
+      });
     }
   },
 ]);
@@ -87,12 +79,10 @@ export const isAdmin = compose([
   isAuthenticated,
   (req: Request, res: Response, next: NextFunction) => {
     if (!req.user!.admin) {
-      return void next(
-        new ApiError({
-          status: 403,
-          i18nKey: 'forbidden',
-        }),
-      );
+      return void ApiError.passNext(next, {
+        status: 403,
+        i18nKey: 'forbidden',
+      });
     }
     next();
   },
@@ -112,12 +102,10 @@ export const setTokenCookie = (
   next: NextFunction,
 ) => {
   if (!req.user) {
-    return void next(
-      new ApiError({
-        status: 404,
-        i18nKey: 'something_went_wrong',
-      }),
-    );
+    return void ApiError.passNext(next, {
+      status: 404,
+      i18nKey: 'something_went_wrong',
+    });
   }
   const token = signToken(req.user.id);
   res.cookie('token', JSON.stringify(token));
@@ -133,12 +121,10 @@ export const sendAuthToken = (
   next: NextFunction,
 ) => {
   if (!req.user) {
-    return void next(
-      new ApiError({
-        status: 404,
-        i18nKey: 'something_went_wrong',
-      }),
-    );
+    return void ApiError.passNext(next, {
+      status: 404,
+      i18nKey: 'something_went_wrong',
+    });
   }
   const token = signToken(req.user.id);
   res.json({ token });

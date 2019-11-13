@@ -54,11 +54,12 @@ apiRouter.post(
   async (req: Request, res: Response, next: NextFunction) => {
     const data = req.file.buffer.toString('utf8');
     const destination = path.join(uploadContentDir, req.file.originalname);
+    const errorHandler = new ApiError(next);
     try {
       const isDocumentValidName = validateDocumentName(req.file);
 
       if (!isDocumentValidName) {
-        throw new ApiError({
+        return void errorHandler.passToNext({
           status: 400,
           i18nKey: 'invalid_upload_filename',
           logMsg: `upload: invalid filename ${req.file.originalname}`,
@@ -72,11 +73,7 @@ apiRouter.post(
       await syncContent(uploadContentDir);
       res.sendStatus(200);
     } catch (error) {
-      if (error instanceof ApiError) {
-        next(error);
-      } else {
-        next(new ApiError({ status: 400, error }));
-      }
+      errorHandler.passToNext({ status: 400, error });
     }
   },
 );
@@ -89,7 +86,7 @@ apiRouter.delete(
       await removeContentAndTopic(req.params.filename);
       res.sendStatus(200);
     } catch (error) {
-      next(new ApiError({ status: 400, error }));
+      ApiError.passNext(next, { status: 400, error });
     }
   },
 );
@@ -98,24 +95,23 @@ apiRouter.get(
   '/profile',
   isAuthenticated,
   async (req: Request, res: Response, next: NextFunction) => {
+    const errorHandler = new ApiError(next);
     try {
       const user = await User.findOne({ email: req.user!.email }).select(
         '-hashedPassword',
       );
       if (!user) {
-        return next(
-          new ApiError({
-            status: 401,
-            i18nKey: 'something_went_wrong',
-          }),
-        );
+        return void errorHandler.passToNext({
+          status: 401,
+          i18nKey: 'something_went_wrong',
+        });
       }
       user.lastAccess = new Date();
       await user.save();
       logger.info(`user ${user.email} signed in`);
       res.json(user);
     } catch (error) {
-      next(new ApiError({ status: 500, error }));
+      errorHandler.passToNext({ status: 500, error });
     }
   },
 );
@@ -158,26 +154,23 @@ apiRouter.get(
     if (handleRequestErrors(req, res)) {
       return;
     }
+    const errorHandler = new ApiError(next);
     const user = req.user?.email ?? 'anonymous';
     const { filename } = req.params;
     db.getArticle(filename).then((topic: ITopic): void => {
       if (!topic) {
-        return next(
-          new ApiError({
-            status: 404,
-            i18nKey: 'topic_not_found',
-            logMsg: `(${user}) topic not found: ${filename}`,
-          }),
-        );
+        return void errorHandler.passToNext({
+          status: 404,
+          i18nKey: 'topic_not_found',
+          logMsg: `(${user}) topic not found: ${filename}`,
+        });
       }
       if (topic.restricted && !isAuthorized(req.user)) {
-        return next(
-          new ApiError({
-            status: 401,
-            i18nKey: 'unauthorized',
-            logMsg: `(${user}) unauthorized for restricted topic ${filename}`,
-          }),
-        );
+        return void errorHandler.passToNext({
+          status: 401,
+          i18nKey: 'unauthorized',
+          logMsg: `(${user}) unauthorized for restricted topic ${filename}`,
+        });
       }
       res.json(topic);
     });
