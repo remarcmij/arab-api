@@ -28,5 +28,12 @@
   "user_name_required": "A user name is required",
   "user_not_found": "We were unable to find a matching user for this request.",
   "invalid_upload_filename": "can't upload none markdown or another filename structure than '<publication>.<chapter>.md",
-  "topic_not_found": "Topic not found."
+  "topic_not_found": "Topic not found.",
+  "limit_part_count": "Too many parts.",
+  "limit_file_size": "File too large.",
+  "limit_file_count": "Too many files.",
+  "limit_field_key": "Field name too long.",
+  "limit_field_value": "Field value too long.",
+  "limit_field_count": "Too many fields.",
+  "limit_unexpected_file": "Unexpected field."
 }

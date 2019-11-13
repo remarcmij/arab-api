@@ -26,13 +26,22 @@ const upload = multer();
 
 const uploadContentDir = path.join(__dirname, '../../content/');
 
-const handleRequestErrors = (req: Request, res: Response): boolean => {
+const handleRequestErrors = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    res.status(400).json(errors.array());
-    return true;
+    return res.status(400).json(errors.array());
   }
-  return false;
+  next();
+};
+
+const checkRequiredFields = (...args: any) => {
+  return check(...args)
+    .not()
+    .isEmpty();
 };
 
 /*
@@ -124,13 +133,9 @@ apiRouter.get(
 apiRouter.get(
   '/index/:publication',
   maybeAuthenticated,
-  check('publication', 'publication is required')
-    .not()
-    .isEmpty(),
+  checkRequiredFields('publication', 'publication is required'),
+  handleRequestErrors,
   (req: Request, res: Response) => {
-    if (handleRequestErrors(req, res)) {
-      return;
-    }
     db.getArticleTopics(req.params.publication)
       .then(topics =>
         topics.filter(topic => !topic.restricted || isAuthorized(req.user)),
@@ -147,13 +152,9 @@ apiRouter.get(
 apiRouter.get(
   '/article/:filename',
   maybeAuthenticated,
-  check('filename', 'filename is required')
-    .not()
-    .isEmpty(),
+  checkRequiredFields('filename', 'filename is required'),
+  handleRequestErrors,
   (req: Request, res: Response, next: NextFunction) => {
-    if (handleRequestErrors(req, res)) {
-      return;
-    }
     const errorHandler = new ApiError(next);
     const user = req.user?.email ?? 'anonymous';
     const { filename } = req.params;
@@ -180,13 +181,9 @@ apiRouter.get(
 apiRouter.get(
   '/search',
   maybeAuthenticated,
-  check('term', 'term is required')
-    .not()
-    .isEmpty(),
+  checkRequiredFields('term', 'term is required'),
+  handleRequestErrors,
   (req: Request, res: Response): void => {
-    if (handleRequestErrors(req, res)) {
-      return;
-    }
     const { term } = req.query;
     db.searchWord(term, isAuthorized(req.user))
       .then((lemmas: unknown[]) => res.json(lemmas))
@@ -196,13 +193,9 @@ apiRouter.get(
 
 apiRouter.get(
   '/lookup',
-  check('term', 'term is required')
-    .not()
-    .isEmpty(),
+  checkRequiredFields('term', 'term is required'),
+  handleRequestErrors,
   (req: Request, res: Response) => {
-    if (handleRequestErrors(req, res)) {
-      return;
-    }
     const { term } = req.query;
     db.lookup(term)
       .then((words: unknown[]) => res.json({ words, term }))

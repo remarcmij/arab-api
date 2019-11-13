@@ -27,6 +27,14 @@ export const sysErrorsHandler: ErrorRequestHandler = (
     return void next(error);
   }
 
+  const msg = error.message.toLowerCase();
+  const tMsg = i18next.t(msg);
+  if (tMsg && msg !== tMsg) {
+    error.message = tMsg;
+    error.status = 400;
+    return void next(error);
+  }
+
   // handling any unexpected library/system errors.
   res.status(500).json({ message: i18next.t('server_error') });
 };
