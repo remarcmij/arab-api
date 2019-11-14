@@ -1,7 +1,7 @@
 import { ErrorRequestHandler } from 'express';
 import i18next from 'i18next';
-import logger from '../../config/logger';
-import { isSystemError, AppError } from '../../util';
+import logger from './config/logger';
+import { isSystemError, AppError } from './util';
 
 export const sysErrorsHandler: ErrorRequestHandler = (
   error,
@@ -22,6 +22,7 @@ export const sysErrorsHandler: ErrorRequestHandler = (
   if (error.status ?? error.statusCode) {
     // any libraries using a `status` or `statusCode` mechanism as:
     // i18next, passport.
+    /** @TestNote change the token manually */
     error.status =
       typeof error.status === 'number' ? error.status : error.statusCode;
     return void next(error);

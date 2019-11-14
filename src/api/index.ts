@@ -1,129 +1,40 @@
-import express, { NextFunction, Request, Response } from 'express';
-import { check, validationResult } from 'express-validator/check';
-import fs from 'fs';
+import express, { Request, Response } from 'express';
 import multer from 'multer';
-import path from 'path';
 import {
   isAdmin,
   isAuthenticated,
   maybeAuthenticated,
 } from '../auth/auth-service';
 import '../auth/local/passport-setup';
-import logger from '../config/logger';
-import { ITopic } from '../models/Topic';
-import User, { isAuthorized } from '../models/User';
-import { ApiError } from './ApiError';
 import {
-  removeContentAndTopic,
-  syncContent,
-  validateDocumentName,
-  validateDocumentPayload,
-} from './content';
-import * as db from './db';
+  checkRequiredFields,
+  handleRequestErrors,
+} from './middleware/route-validator';
+import {
+  getRoot,
+  postUpload,
+  deleteTopic,
+  getProfile,
+  getIndex,
+  getArticle,
+  getSearch,
+  getLookup,
+} from './endpoints';
 
 const apiRouter = express.Router();
 const upload = multer();
-
-const uploadContentDir = path.join(__dirname, '../../content/');
-
-const handleRequestErrors = (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json(errors.array());
-  }
-  next();
-};
-
-const checkRequiredFields = (...args: any) => {
-  return check(...args)
-    .not()
-    .isEmpty();
-};
 
 /*
  * @oas [get] /api
  * description: Returns a list of publications topics
  */
-apiRouter.get('/', maybeAuthenticated, (req: Request, res: Response) => {
-  db.getIndexTopics()
-    .then(topics =>
-      topics.filter(topic => !topic.restricted || isAuthorized(req.user)),
-    )
-    .then(topics => res.json(topics));
-});
+apiRouter.get('/', maybeAuthenticated, getRoot);
 
-apiRouter.post(
-  '/upload',
-  isAdmin,
-  upload.single('file'),
-  async (req: Request, res: Response, next: NextFunction) => {
-    const data = req.file.buffer.toString('utf8');
-    const destination = path.join(uploadContentDir, req.file.originalname);
-    const errorHandler = new ApiError(next);
-    try {
-      const isDocumentValidName = validateDocumentName(req.file);
+apiRouter.post('/upload', isAdmin, upload.single('file'), postUpload);
 
-      if (!isDocumentValidName) {
-        return void errorHandler.passToNext({
-          status: 400,
-          i18nKey: 'invalid_upload_filename',
-          logMsg: `upload: invalid filename ${req.file.originalname}`,
-        });
-      }
+apiRouter.delete('/topic/:filename', isAdmin, deleteTopic);
 
-      validateDocumentPayload(data);
-
-      // todo: replace these two lines with MongoDB request.
-      await fs.promises.writeFile(destination, data);
-      await syncContent(uploadContentDir);
-      res.sendStatus(200);
-    } catch (error) {
-      errorHandler.passToNext({ status: 400, error });
-    }
-  },
-);
-
-apiRouter.delete(
-  '/topic/:filename',
-  isAdmin,
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      await removeContentAndTopic(req.params.filename);
-      res.sendStatus(200);
-    } catch (error) {
-      ApiError.passNext(next, { status: 400, error });
-    }
-  },
-);
-
-apiRouter.get(
-  '/profile',
-  isAuthenticated,
-  async (req: Request, res: Response, next: NextFunction) => {
-    const errorHandler = new ApiError(next);
-    try {
-      const user = await User.findOne({ email: req.user!.email }).select(
-        '-hashedPassword',
-      );
-      if (!user) {
-        return void errorHandler.passToNext({
-          status: 401,
-          i18nKey: 'something_went_wrong',
-        });
-      }
-      user.lastAccess = new Date();
-      await user.save();
-      logger.info(`user ${user.email} signed in`);
-      res.json(user);
-    } catch (error) {
-      errorHandler.passToNext({ status: 500, error });
-    }
-  },
-);
+apiRouter.get('/profile', isAuthenticated, getProfile);
 
 /* @oas [get] /api/index/{publication}
  * description: Returns a list of article topics
@@ -135,13 +46,7 @@ apiRouter.get(
   maybeAuthenticated,
   checkRequiredFields('publication', 'publication is required'),
   handleRequestErrors,
-  (req: Request, res: Response) => {
-    db.getArticleTopics(req.params.publication)
-      .then(topics =>
-        topics.filter(topic => !topic.restricted || isAuthorized(req.user)),
-      )
-      .then(topics => res.json(topics));
-  },
+  getIndex,
 );
 
 /* @oas [get] /api/article/{filename}
@@ -154,28 +59,7 @@ apiRouter.get(
   maybeAuthenticated,
   checkRequiredFields('filename', 'filename is required'),
   handleRequestErrors,
-  (req: Request, res: Response, next: NextFunction) => {
-    const errorHandler = new ApiError(next);
-    const user = req.user?.email ?? 'anonymous';
-    const { filename } = req.params;
-    db.getArticle(filename).then((topic: ITopic): void => {
-      if (!topic) {
-        return void errorHandler.passToNext({
-          status: 404,
-          i18nKey: 'topic_not_found',
-          logMsg: `(${user}) topic not found: ${filename}`,
-        });
-      }
-      if (topic.restricted && !isAuthorized(req.user)) {
-        return void errorHandler.passToNext({
-          status: 401,
-          i18nKey: 'unauthorized',
-          logMsg: `(${user}) unauthorized for restricted topic ${filename}`,
-        });
-      }
-      res.json(topic);
-    });
-  },
+  getArticle,
 );
 
 apiRouter.get(
@@ -183,24 +67,14 @@ apiRouter.get(
   maybeAuthenticated,
   checkRequiredFields('term', 'term is required'),
   handleRequestErrors,
-  (req: Request, res: Response): void => {
-    const { term } = req.query;
-    db.searchWord(term, isAuthorized(req.user))
-      .then((lemmas: unknown[]) => res.json(lemmas))
-      .catch(err => res.status(500).json({ error: err.message }));
-  },
+  getSearch,
 );
 
 apiRouter.get(
   '/lookup',
   checkRequiredFields('term', 'term is required'),
   handleRequestErrors,
-  (req: Request, res: Response) => {
-    const { term } = req.query;
-    db.lookup(term)
-      .then((words: unknown[]) => res.json({ words, term }))
-      .catch(err => res.status(500).json({ error: err.message }));
-  },
+  getLookup,
 );
 
 // Error Handling!
