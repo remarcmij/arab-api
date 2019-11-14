@@ -1,12 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { validateDocumentPayload } from '../content';
+import { validateDocumentPayload, addORReplaceTopic } from '../content';
 import { validateDocumentName } from '../content';
-import { syncContent } from '../content';
-import path from 'path';
-import fs from 'fs';
 import { ApiError } from '../ApiError';
-
-const uploadContentDir = path.join(__dirname, '../../content/');
 
 export const postUpload = async (
   req: Request,
@@ -14,7 +9,6 @@ export const postUpload = async (
   next: NextFunction,
 ) => {
   const data = req.file.buffer.toString('utf8');
-  const destination = path.join(uploadContentDir, req.file.originalname);
   const errorHandler = new ApiError(next);
   try {
     const isDocumentValidName = validateDocumentName(req.file);
@@ -29,9 +23,7 @@ export const postUpload = async (
 
     validateDocumentPayload(data);
 
-    // todo: replace these two lines with MongoDB request.
-    await fs.promises.writeFile(destination, data);
-    await syncContent(uploadContentDir);
+    await addORReplaceTopic(req.file.originalname, data);
     res.sendStatus(200);
   } catch (error) {
     errorHandler.passToNext({ status: 400, error });

@@ -22,7 +22,7 @@ import {
 } from './endpoints';
 
 const apiRouter = express.Router();
-const upload = multer();
+const uploadSingleFile = multer().single('file');
 
 /*
  * @oas [get] /api
@@ -30,7 +30,7 @@ const upload = multer();
  */
 apiRouter.get('/', maybeAuthenticated, getRoot);
 
-apiRouter.post('/upload', isAdmin, upload.single('file'), postUpload);
+apiRouter.post('/upload', isAdmin, uploadSingleFile, postUpload);
 
 apiRouter.delete('/topic/:filename', isAdmin, deleteTopic);
 
