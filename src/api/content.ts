@@ -124,7 +124,7 @@ export function validateDocumentPayload<T extends { index?: boolean }>(
 
   if (isIndex && hasBody) {
     throw new AppError(
-      'invalid empty markdown body file, an index should not contain a body.',
+      'invalid markdown body file, an index should not contain a body.',
     );
   }
 
