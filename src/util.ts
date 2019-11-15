@@ -22,7 +22,7 @@ export const isSystemError = (error: Error & { errno?: number }) => {
       const errorName = util.getSystemErrorName(error.errno);
       // system errors doesn't have spaces in their code names!
       // so if there is a space it's gonna be out of 'Unknown system error <negative-number>'
-      hasSystemErrorName = !/[^ ]/.test(errorName);
+      hasSystemErrorName = /[^ ]/.test(errorName);
     } catch (error) {
       /* error thrown? then it's not a system error!. */
     }
