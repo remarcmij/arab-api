@@ -122,6 +122,12 @@ export function validateDocumentPayload<T extends { index?: boolean }>(
     throw new AppError('invalid empty markdown body file.');
   }
 
+  if (isIndex && hasBody) {
+    throw new AppError(
+      'invalid empty markdown body file, an index should not contain a body.',
+    );
+  }
+
   const parserResult = parseBody(fmResult.body);
 
   return { fmResult, parserResult };
