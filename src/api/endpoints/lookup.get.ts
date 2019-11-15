@@ -1,9 +1,17 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import * as db from '../db';
+import { ApiError } from '../ApiError';
 
-export const getLookup = (req: Request, res: Response) => {
-  const { term } = req.query;
-  db.lookup(term)
-    .then((words: unknown[]) => res.json({ words, term }))
-    .catch(err => res.status(500).json({ error: err.message }));
+export const getLookup = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { term } = req.query;
+    const words = await db.lookup(term);
+    res.json({ words, term });
+  } catch (error) {
+    ApiError.passNext(next, { error: error.message, status: 500 });
+  }
 };

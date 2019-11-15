@@ -23,6 +23,7 @@ interface IAttributes {
   title: string;
   subtitle?: string;
   restricted: boolean;
+  index?: boolean;
 }
 
 const CONTENT_DIR = path.join(
@@ -103,7 +104,9 @@ export async function syncContent(contentDir = CONTENT_DIR) {
   });
 }
 
-export function validateDocumentPayload<T = object>(data: string) {
+export function validateDocumentPayload<T extends { index?: boolean }>(
+  data: string,
+) {
   const fmResult = fm<T>(data);
 
   const hasAttributes = !!Object.keys(fmResult.attributes).length;
@@ -112,7 +115,10 @@ export function validateDocumentPayload<T = object>(data: string) {
   }
 
   const hasBody = !!fmResult.body.replace(/\r?\n/gi, '').trim();
-  if (!hasBody) {
+
+  const { index: isIndex } = fmResult.attributes;
+
+  if (!hasBody && !isIndex) {
     throw new AppError('invalid empty markdown body file.');
   }
 

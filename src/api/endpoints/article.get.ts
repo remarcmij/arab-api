@@ -1,14 +1,18 @@
 import { Request, Response, NextFunction } from 'express';
 import { ApiError } from '../ApiError';
 import { isAuthorized } from '../../models/User';
-import { ITopic } from '../../models/Topic';
 import * as db from '../db';
 
-export const getArticle = (req: Request, res: Response, next: NextFunction) => {
+export const getArticle = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   const errorHandler = new ApiError(next);
-  const user = req.user?.email ?? 'anonymous';
-  const { filename } = req.params;
-  db.getArticle(filename).then((topic: ITopic): void => {
+  try {
+    const user = req.user?.email ?? 'anonymous';
+    const { filename } = req.params;
+    const topic = await db.getArticle(filename);
     if (!topic) {
       return void errorHandler.passToNext({
         status: 404,
@@ -24,5 +28,7 @@ export const getArticle = (req: Request, res: Response, next: NextFunction) => {
       });
     }
     res.json(topic);
-  });
+  } catch (error) {
+    errorHandler.passToNext({ error, status: 500 });
+  }
 };

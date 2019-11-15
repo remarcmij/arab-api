@@ -1,11 +1,20 @@
 import * as db from '../db';
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { isAuthorized } from '../../models/User';
+import { ApiError } from '../ApiError';
 
-export const getIndex = (req: Request, res: Response) => {
-  db.getArticleTopics(req.params.publication)
-    .then(topics =>
-      topics.filter(topic => !topic.restricted || isAuthorized(req.user)),
-    )
-    .then(topics => res.json(topics));
+export const getIndex = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const topics = await db.getArticleTopics(req.params.publication);
+    const userRelatedTopics = topics.filter(
+      topic => !topic.restricted || isAuthorized(req.user),
+    );
+    res.json(userRelatedTopics);
+  } catch (error) {
+    ApiError.passNext(next, { error, status: 500 });
+  }
 };

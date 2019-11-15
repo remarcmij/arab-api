@@ -1,13 +1,20 @@
-
 import * as db from '../db';
 import { isAuthorized } from '../../models/User';
-import { Request, Response } from 'express'
+import { Request, Response, NextFunction } from 'express';
+import { ApiError } from '../ApiError';
 
-export const getRoot = (req: Request, res: Response) => {
-  db.getIndexTopics()
-    .then(topics =>
-      topics.filter(topic => !topic.restricted || isAuthorized(req.user)),
-    )
-    .then(topics => res.json(topics));
-
-}
+export const getRoot = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const topics = await db.getIndexTopics();
+    const userRelatedTopics = topics.filter(
+      topic => !topic.restricted || isAuthorized(req.user),
+    );
+    res.json(userRelatedTopics);
+  } catch (error) {
+    ApiError.passNext(next, { error, status: 500 });
+  }
+};
