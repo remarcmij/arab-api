@@ -1,7 +1,6 @@
-import i18next from 'i18next';
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
-import logger from '../../config/logger';
+import { ApiError } from '../../api/ApiError';
 import User, { validatePassword as comparePassword } from '../../models/User';
 
 passport.use(
@@ -11,25 +10,31 @@ passport.use(
       passwordField: 'password',
     },
     async (email, password, done) => {
+      const errorHandler = new ApiError(done, null, false);
       try {
         const user = await User.findOne({ email });
         if (!user) {
-          logger.info(`${email}: login user not found`);
-          return void done(null, false, {
-            message: i18next.t('invalid_credentials'),
+          return void errorHandler.passToNext({
+            status: 401,
+            i18nKey: 'invalid_credentials',
+            logMsg: `(${email}) user not found`,
           });
         }
         const validated =
           !!user.password && (await comparePassword(password, user.password));
         if (!validated) {
-          logger.info(`${user.email}: invalid login password`);
-          return done(null, false, {
-            message: i18next.t('invalid_credentials'),
+          return void errorHandler.passToNext({
+            status: 401,
+            i18nKey: 'invalid_credentials',
+            logMsg: `(${user.email}) invalid password`,
           });
         }
         return done(null, user);
-      } catch (err) {
-        done(err);
+      } catch (error) {
+        new ApiError(done).passToNext({
+          error,
+          status: 500,
+        });
       }
     },
   ),

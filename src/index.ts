@@ -16,6 +16,7 @@ import authRouter from './auth';
 import connectDB from './config/db';
 import logger from './config/logger';
 import localesRouter from './locales';
+import { sysErrorsHandler, userErrorsHandler } from './error-establisher';
 
 const PORT = 8080; // default port to listen
 
@@ -43,8 +44,8 @@ i18next
   .use(i18middleware.LanguageDetector)
   .init({
     backend: {
-      loadPath: path.join(__dirname, '/../locales/{{lng}}/{{ns}}.json'),
-      addPath: path.join(__dirname, '/../locales/{{lng}}/{{ns}}.missing.json'),
+      loadPath: path.join(__dirname, './locales/{{lng}}/{{ns}}.json'),
+      addPath: path.join(__dirname, './locales/{{lng}}/{{ns}}.missing.json'),
     },
     fallbackLng: 'en',
     ns: ['server'],
@@ -74,11 +75,13 @@ i18next
       .get((req, res) => res.sendFile('index.html', { root: docRoot }));
   }
 
+  app.use(sysErrorsHandler, userErrorsHandler);
+
   app.listen(PORT, async () => {
     logger.info('---------------------------------------');
     try {
       await content.syncContent();
-      content.watchContent();
+
       logger.info(`server started at http://localhost:${PORT}`);
     } catch (err) {
       logger.error(`error starting server: ${err.message}`);

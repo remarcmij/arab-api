@@ -2,15 +2,15 @@ import crypto from 'crypto';
 import fm from 'front-matter';
 import fs from 'fs';
 import _glob from 'glob';
-import debounce from 'lodash.debounce';
 import path from 'path';
 import util from 'util';
 import logger from '../config/logger';
-import { ILemma } from '../models/lemma';
-import { ITopic } from '../models/topic';
+import { ILemma } from '../models/Lemma';
+import { ITopic } from '../models/Topic';
 import * as db from './db';
 import { parseBody } from './parser';
 import TaskQueue from './TaskQueue';
+import { AppError } from '../util';
 
 const glob = util.promisify(_glob);
 const CONCURRENCY = 2;
@@ -23,6 +23,7 @@ interface IAttributes {
   title: string;
   subtitle?: string;
   restricted: boolean;
+  index?: boolean;
 }
 
 const CONTENT_DIR = path.join(
@@ -38,14 +39,15 @@ function computeSha(data: string) {
   return shaSum.digest('hex');
 }
 
-async function loadDocument(filePath: string) {
+async function loadDocument(filePath: string): Promise<void> {
   try {
-    const { name: filename } = path.parse(filePath);
-    const [publication, article] = filename.split('.');
+    const filename = path.parse(filePath).name;
+
+    const [, article] = filename.split('.');
 
     if (!article) {
       throw new Error(
-        `${filePath}\n>>> expected filename format <publication>.<article>.md`,
+        `${filename}\n>>> expected filename format <publication>.<article>.md`,
       );
     }
 
@@ -60,46 +62,85 @@ async function loadDocument(filePath: string) {
 
     logger.info(`loading: ${filename}`);
 
-    const fmResult = fm<IAttributes>(text);
-
-    const topic: ITopic = {
-      ...fmResult.attributes,
-      article,
-      filename,
-      publication,
-      sections: [],
-      sha: computedSha,
-    };
-
-    let lemmas: ILemma[];
-    if (article === 'index') {
-      lemmas = [];
-    } else {
-      const result = parseBody(fmResult.body);
-      topic.sections = result.sections;
-      lemmas = result.lemmas;
-    }
-
-    await db.deleteTopic(filename);
-    await db.insertTopic(topic, lemmas);
+    await addORReplaceTopic(filename, text);
   } catch (err) {
     logger.error(err.message);
   }
 }
 
-export async function syncContent() {
-  const filePaths = await glob(`${CONTENT_DIR}/*.md`);
+export async function addORReplaceTopic(filename: string, newContent: string) {
+  const [publication, article] = filename.split('.');
+  const computedSha = computeSha(newContent);
+
+  const { fmResult, parserResult } = validateDocumentPayload<IAttributes>(
+    newContent,
+  );
+
+  const topic: ITopic = {
+    ...fmResult.attributes,
+    article,
+    filename,
+    publication,
+    sections: [],
+    sha: computedSha,
+  };
+
+  let lemmas: ILemma[];
+  if (article === 'index') {
+    lemmas = [];
+  } else {
+    topic.sections = parserResult.sections;
+    lemmas = parserResult.lemmas;
+  }
+
+  await db.deleteTopic(filename);
+  await db.insertTopic(topic, lemmas);
+}
+
+export async function syncContent(contentDir = CONTENT_DIR) {
+  const filePaths = await glob(`${contentDir}/*.md`);
   filePaths.forEach(filePath => {
     taskQueue.pushTask(() => loadDocument(filePath));
   });
-  // TODO: handle deleted files
 }
 
-export function watchContent() {
-  const refreshContentDebounced = debounce(syncContent, 5000, {
-    trailing: true,
-  });
-  fs.watch(CONTENT_DIR, () => {
-    refreshContentDebounced();
-  });
+export function validateDocumentPayload<T extends { index?: boolean }>(
+  data: string,
+) {
+  const fmResult = fm<T>(data);
+
+  const hasAttributes = !!Object.keys(fmResult.attributes).length;
+  if (!hasAttributes) {
+    throw new AppError('invalid empty markdown head file.');
+  }
+
+  const hasBody = !!fmResult.body.replace(/\r?\n/gi, '').trim();
+
+  const { index: isIndex } = fmResult.attributes;
+
+  if (!hasBody && !isIndex) {
+    throw new AppError('invalid empty markdown body file.');
+  }
+
+  if (isIndex && hasBody) {
+    throw new AppError(
+      'invalid markdown body file, an index should not contain a body.',
+    );
+  }
+
+  const parserResult = parseBody(fmResult.body);
+
+  return { fmResult, parserResult };
+}
+
+export function validateDocumentName(file: { originalname: string }) {
+  const parts = file.originalname.split('.');
+  return parts.length === 3 || parts[2] === 'md';
+}
+
+export async function removeContentAndTopic(filename: string) {
+  const isDeleted = await db.deleteTopic(filename);
+  if (!isDeleted) {
+    throw new AppError('topic not found: ' + filename);
+  }
 }

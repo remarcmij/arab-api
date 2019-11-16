@@ -1,5 +1,6 @@
 import { Language } from '../Language';
 import { ILemma } from '../models/Lemma';
+import { AppError } from '../util';
 
 // Matches: nl | ar | rom
 const tableHeaderRegexp = new RegExp(
@@ -20,7 +21,7 @@ function parseLemmaTable(iter: IterableIterator<string>, sectionIndex: number) {
   }
 
   if (!tableDividerRegexp.test(item.value)) {
-    throw new Error(
+    throw new AppError(
       `Expected a markdown table divider but found: '${item.value}'`,
     );
   }
