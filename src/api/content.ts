@@ -10,6 +10,7 @@ import { ITopic } from '../models/Topic';
 import * as db from './db';
 import { parseBody } from './parser';
 import TaskQueue from './TaskQueue';
+import { AppError } from '../util';
 
 const glob = util.promisify(_glob);
 const CONCURRENCY = 2;
@@ -22,6 +23,7 @@ interface IAttributes {
   title: string;
   subtitle?: string;
   restricted: boolean;
+  index?: boolean;
 }
 
 const CONTENT_DIR = path.join(
@@ -37,14 +39,15 @@ function computeSha(data: string) {
   return shaSum.digest('hex');
 }
 
-async function loadDocument(filePath: string) {
+async function loadDocument(filePath: string): Promise<void> {
   try {
-    const { name: filename } = path.parse(filePath);
-    const [publication, article] = filename.split('.');
+    const filename = path.parse(filePath).name;
+
+    const [, article] = filename.split('.');
 
     if (!article) {
       throw new Error(
-        `${filePath}\n>>> expected filename format <publication>.<article>.md`,
+        `${filename}\n>>> expected filename format <publication>.<article>.md`,
       );
     }
 
@@ -59,31 +62,39 @@ async function loadDocument(filePath: string) {
 
     logger.info(`loading: ${filename}`);
 
-    const fmResult = fm<IAttributes>(text);
-
-    const topic: ITopic = {
-      ...fmResult.attributes,
-      article,
-      filename,
-      publication,
-      sections: [],
-      sha: computedSha,
-    };
-
-    let lemmas: ILemma[];
-    if (article === 'index') {
-      lemmas = [];
-    } else {
-      const result = parseBody(fmResult.body);
-      topic.sections = result.sections;
-      lemmas = result.lemmas;
-    }
-
-    await db.deleteTopic(filename);
-    await db.insertTopic(topic, lemmas);
+    await addORReplaceTopic(filename, text);
   } catch (err) {
     logger.error(err.message);
   }
+}
+
+export async function addORReplaceTopic(filename: string, newContent: string) {
+  const [publication, article] = filename.split('.');
+  const computedSha = computeSha(newContent);
+
+  const { fmResult, parserResult } = validateDocumentPayload<IAttributes>(
+    newContent,
+  );
+
+  const topic: ITopic = {
+    ...fmResult.attributes,
+    article,
+    filename,
+    publication,
+    sections: [],
+    sha: computedSha,
+  };
+
+  let lemmas: ILemma[];
+  if (article === 'index') {
+    lemmas = [];
+  } else {
+    topic.sections = parserResult.sections;
+    lemmas = parserResult.lemmas;
+  }
+
+  await db.deleteTopic(filename);
+  await db.insertTopic(topic, lemmas);
 }
 
 export async function syncContent(contentDir = CONTENT_DIR) {
@@ -93,22 +104,33 @@ export async function syncContent(contentDir = CONTENT_DIR) {
   });
 }
 
-export function validateDocumentPayload(data: string) {
-  const fmResult = fm<object>(data);
+export function validateDocumentPayload<T extends { index?: boolean }>(
+  data: string,
+) {
+  const fmResult = fm<T>(data);
 
   const hasAttributes = !!Object.keys(fmResult.attributes).length;
   if (!hasAttributes) {
-    throw new Error('invalid empty markdown head file.');
+    throw new AppError('invalid empty markdown head file.');
   }
 
-  const hasBody = !!fmResult.body.replace(/\r?\n/ig, '').trim();
-  if (!hasBody) {
-    throw new Error('invalid empty markdown body file.');
+  const hasBody = !!fmResult.body.replace(/\r?\n/gi, '').trim();
+
+  const { index: isIndex } = fmResult.attributes;
+
+  if (!hasBody && !isIndex) {
+    throw new AppError('invalid empty markdown body file.');
   }
 
-  parseBody(fmResult.body);
+  if (isIndex && hasBody) {
+    throw new AppError(
+      'invalid markdown body file, an index should not contain a body.',
+    );
+  }
 
-  return fmResult;
+  const parserResult = parseBody(fmResult.body);
+
+  return { fmResult, parserResult };
 }
 
 export function validateDocumentName(file: { originalname: string }) {
@@ -119,8 +141,6 @@ export function validateDocumentName(file: { originalname: string }) {
 export async function removeContentAndTopic(filename: string) {
   const isDeleted = await db.deleteTopic(filename);
   if (!isDeleted) {
-    throw new Error('topic not found with the name of: ' + filename);
+    throw new AppError('topic not found: ' + filename);
   }
-
-  await fs.promises.unlink(path.join(CONTENT_DIR, filename) + '.md');
 }

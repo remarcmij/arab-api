@@ -10,35 +10,31 @@ passport.use(
       passwordField: 'password',
     },
     async (email, password, done) => {
+      const errorHandler = new ApiError(done, null, false);
       try {
         const user = await User.findOne({ email });
         if (!user) {
-          return void done(
-            null,
-            false,
-            new ApiError({
-              status: 401,
-              i18nKey: 'invalid_credentials',
-              logMsg: `(${email}) user not found`,
-            }),
-          );
+          return void errorHandler.passToNext({
+            status: 401,
+            i18nKey: 'invalid_credentials',
+            logMsg: `(${email}) user not found`,
+          });
         }
         const validated =
           !!user.password && (await comparePassword(password, user.password));
         if (!validated) {
-          return done(
-            null,
-            false,
-            new ApiError({
-              status: 401,
-              i18nKey: 'invalid_credentials',
-              logMsg: `(${user.email}) invalid password`,
-            }),
-          );
+          return void errorHandler.passToNext({
+            status: 401,
+            i18nKey: 'invalid_credentials',
+            logMsg: `(${user.email}) invalid password`,
+          });
         }
         return done(null, user);
-      } catch (err) {
-        done(err);
+      } catch (error) {
+        new ApiError(done).passToNext({
+          error,
+          status: 500,
+        });
       }
     },
   ),

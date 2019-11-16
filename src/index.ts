@@ -16,7 +16,7 @@ import authRouter from './auth';
 import connectDB from './config/db';
 import logger from './config/logger';
 import localesRouter from './locales';
-import { sysErrorsHandler, userErrorsHandler } from './api/middleware/errors';
+import { sysErrorsHandler, userErrorsHandler } from './error-establisher';
 
 const PORT = 8080; // default port to listen
 

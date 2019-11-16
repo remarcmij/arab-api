@@ -7,7 +7,6 @@ import jwt from 'jsonwebtoken';
 import _template from 'lodash.template';
 import passport from 'passport';
 import { ApiError } from '../api/ApiError';
-// import { sysErrorsHandler, userErrorsHandler } from '../api/middleware/errors';
 import logger from '../config/logger';
 import User, { encryptPassword, IUser } from '../models/User';
 import { assertIsString } from '../util';

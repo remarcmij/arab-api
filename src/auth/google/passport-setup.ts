@@ -6,6 +6,7 @@ import logger from '../../config/logger';
 import User, { IUser, IUserDocument } from '../../models/User';
 import { assertIsString } from '../../util';
 import { sendMail } from '../auth-service';
+import { ApiError } from '../../api/ApiError';
 
 interface IGoogleProfile {
   id: string;
@@ -22,7 +23,7 @@ async function verify(
   _accessToken: string,
   _refreshToken: string,
   profile: IGoogleProfile,
-  cb: (err: Error | null, user?: IUserDocument) => void,
+  done: (err: Error | null, user?: IUserDocument) => void,
 ) {
   try {
     const {
@@ -52,9 +53,12 @@ async function verify(
       await user.save();
       logger.debug(`existing Google user signed in: ${user.email}`);
     }
-    cb(null, user);
-  } catch (err) {
-    cb(err);
+    done(null, user);
+  } catch (error) {
+    new ApiError(done).passToNext({
+      error,
+      status: 500,
+    });
   }
 }
 
