@@ -110,6 +110,12 @@ export function getTopicSha(filename: string) {
   return Topic.findOne({ filename }).then(doc => (doc ? doc.sha : null));
 }
 
+export function getAllTopics() {
+  return Topic.find({})
+    .select('-sections')
+    .sort('filename');
+}
+
 export function getIndexTopics() {
   return Topic.find({ article: 'index' }).sort('title');
 }

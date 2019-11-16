@@ -18,3 +18,16 @@ export const getRoot = async (
     ApiError.passNext(next, { error, status: 500 });
   }
 };
+
+export const getAll = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const topics = await db.getAllTopics();
+    res.json(topics);
+  } catch (error) {
+    ApiError.passNext(next, { error, status: 500 });
+  }
+};

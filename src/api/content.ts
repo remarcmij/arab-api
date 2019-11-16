@@ -9,15 +9,13 @@ import { ILemma } from '../models/Lemma';
 import { ITopic } from '../models/Topic';
 import * as db from './db';
 import { parseBody } from './parser';
-import TaskQueue from './TaskQueue';
 import { AppError } from '../util';
 
 const glob = util.promisify(_glob);
-const CONCURRENCY = 2;
 
-const taskQueue = new TaskQueue(CONCURRENCY, () => {
-  db.rebuildAutoCompletions();
-});
+type TopicDisposition = {
+  disposition: 'success' | 'unchanged';
+};
 
 interface IAttributes {
   title: string;
@@ -39,42 +37,27 @@ function computeSha(data: string) {
   return shaSum.digest('hex');
 }
 
-async function loadDocument(filePath: string): Promise<void> {
-  try {
-    const filename = path.parse(filePath).name;
-
-    const [, article] = filename.split('.');
-
-    if (!article) {
-      throw new Error(
-        `${filename}\n>>> expected filename format <publication>.<article>.md`,
-      );
-    }
-
-    const text = await fs.promises.readFile(filePath, 'utf8');
-
-    const computedSha = computeSha(text);
-    const storedSha = await db.getTopicSha(filename);
-    if (computedSha === storedSha) {
-      logger.info(`unchanged: ${filename}`);
-      return;
-    }
-
-    logger.info(`loading: ${filename}`);
-
-    await addORReplaceTopic(filename, text);
-  } catch (err) {
-    logger.error(err.message);
-  }
-}
-
-export async function addORReplaceTopic(filename: string, newContent: string) {
+export async function addORReplaceTopic(
+  filename: string,
+  newContent: string,
+): Promise<TopicDisposition> {
   const [publication, article] = filename.split('.');
   const computedSha = computeSha(newContent);
 
   const { fmResult, parserResult } = validateDocumentPayload<IAttributes>(
     newContent,
   );
+
+  const statusCode = 200;
+
+  const storedSha = await db.getTopicSha(filename);
+  if (storedSha == null) {
+    statusCode;
+  }
+  if (computedSha === storedSha) {
+    logger.info(`unchanged: ${filename}`);
+    return { disposition: 'unchanged' };
+  }
 
   const topic: ITopic = {
     ...fmResult.attributes,
@@ -95,13 +78,8 @@ export async function addORReplaceTopic(filename: string, newContent: string) {
 
   await db.deleteTopic(filename);
   await db.insertTopic(topic, lemmas);
-}
 
-export async function syncContent(contentDir = CONTENT_DIR) {
-  const filePaths = await glob(`${contentDir}/*.md`);
-  filePaths.forEach(filePath => {
-    taskQueue.pushTask(() => loadDocument(filePath));
-  });
+  return { disposition: 'success' };
 }
 
 export function validateDocumentPayload<T extends { index?: boolean }>(
@@ -114,19 +92,19 @@ export function validateDocumentPayload<T extends { index?: boolean }>(
     throw new AppError('invalid empty markdown head file.');
   }
 
-  const hasBody = !!fmResult.body.replace(/\r?\n/gi, '').trim();
+  // const hasBody = !!fmResult.body.replace(/\r?\n/gi, '').trim();
 
-  const { index: isIndex } = fmResult.attributes;
+  // const { index: isIndex } = fmResult.attributes;
 
-  if (!hasBody && !isIndex) {
-    throw new AppError('invalid empty markdown body file.');
-  }
+  // if (!hasBody && !isIndex) {
+  //   throw new AppError('invalid empty markdown body file.');
+  // }
 
-  if (isIndex && hasBody) {
-    throw new AppError(
-      'invalid markdown body file, an index should not contain a body.',
-    );
-  }
+  // if (isIndex && hasBody) {
+  //   throw new AppError(
+  //     'invalid markdown body file, an index should not contain a body.',
+  //   );
+  // }
 
   const parserResult = parseBody(fmResult.body);
 
@@ -138,7 +116,7 @@ export function validateDocumentName(file: { originalname: string }) {
   return parts.length === 3 || parts[2] === 'md';
 }
 
-export async function removeContentAndTopic(filename: string) {
+export async function deleteTopic(filename: string) {
   const isDeleted = await db.deleteTopic(filename);
   if (!isDeleted) {
     throw new AppError('topic not found: ' + filename);

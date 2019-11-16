@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ApiError } from '../ApiError';
-import { removeContentAndTopic } from '../content';
+import { deleteTopic as contentDeleteTopic } from '../content';
 
 export const deleteTopic = async (
   req: Request,
@@ -8,8 +8,8 @@ export const deleteTopic = async (
   next: NextFunction,
 ) => {
   try {
-    await removeContentAndTopic(req.params.filename);
-    res.sendStatus(200);
+    await contentDeleteTopic(req.params.filename);
+    next();
   } catch (error) {
     ApiError.passNext(next, { status: 400, error });
   }

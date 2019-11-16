@@ -1,7 +1,11 @@
-import { Request, Response, NextFunction } from 'express';
-import { validateDocumentPayload, addORReplaceTopic } from '../content';
-import { validateDocumentName } from '../content';
+import { NextFunction, Request, Response } from 'express';
+import path from 'path';
 import { ApiError } from '../ApiError';
+import {
+  addORReplaceTopic,
+  validateDocumentName,
+  validateDocumentPayload,
+} from '../content';
 
 export const postUpload = async (
   req: Request,
@@ -23,8 +27,9 @@ export const postUpload = async (
 
     validateDocumentPayload(data);
 
-    await addORReplaceTopic(req.file.originalname, data);
-    res.sendStatus(200);
+    const filename = path.parse(req.file.originalname).name;
+    const disposition = await addORReplaceTopic(filename, data);
+    res.status(200).json(disposition);
   } catch (error) {
     errorHandler.passToNext({ status: 400, error });
   }

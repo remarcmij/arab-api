@@ -4,7 +4,7 @@ import Lemma from './models/Lemma';
 import Topic from './models/Topic';
 import Word from './models/Word';
 
-mongoose.connect('mongodb://localhost/arab', {
+mongoose.connect('mongodb://127.0.0.1/arab', {
   useNewUrlParser: true,
   useCreateIndex: true,
   useUnifiedTopology: true,
