@@ -56,3 +56,6 @@ export class ApiError extends AppError {
     return void ApiError.passNext(this._next!, params);
   }
 }
+
+export const withError = (next: NextFunction) => (params: IApiErrorParams) =>
+  void next(new ApiError(params));

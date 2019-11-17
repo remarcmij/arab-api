@@ -6,6 +6,7 @@ import Lemma, { ILemma } from '../models/Lemma';
 import Topic, { ITopic, ITopicDocument } from '../models/Topic';
 import Word, { IWord } from '../models/Word';
 import { extractLemmaWords } from './word-extractor';
+import debounce from 'lodash.debounce';
 
 async function insertWords(
   lemmas: ILemma[],
@@ -83,10 +84,16 @@ export async function insertTopic(topic: ITopic, lemmas: ILemma[]) {
   logger.debug(`inserted topic: ${topic.filename}`);
 }
 
-export async function rebuildAutoCompletions() {
+async function rebuildAutoCompletions() {
   try {
     await AutoComplete.deleteMany({});
     const lemmas = await Lemma.find({});
+    if (lemmas.length === 0) {
+      return void logger.info(
+        'no lemmas for building auto-complete collection',
+      );
+    }
+
     const inserts: Map<string, {}> = new Map();
     lemmas.forEach(lemma => {
       const { nativeWords, foreignWords } = extractLemmaWords(lemma);
@@ -105,6 +112,11 @@ export async function rebuildAutoCompletions() {
     logger.error(`error rebuilding auto-complete collection: ${err.message}`);
   }
 }
+
+export const debouncedRebuildAutoCompletions = debounce(
+  rebuildAutoCompletions,
+  2000,
+);
 
 export function getTopicSha(filename: string) {
   return Topic.findOne({ filename }).then(doc => (doc ? doc.sha : null));

@@ -6,6 +6,7 @@ import {
   validateDocumentName,
   validateDocumentPayload,
 } from '../content';
+import { debouncedRebuildAutoCompletions } from '../db';
 
 export const postUpload = async (
   req: Request,
@@ -29,6 +30,7 @@ export const postUpload = async (
 
     const filename = path.parse(req.file.originalname).name;
     const disposition = await addORReplaceTopic(filename, data);
+    debouncedRebuildAutoCompletions();
     res.status(200).json(disposition);
   } catch (error) {
     errorHandler.passToNext({ status: 400, error });
