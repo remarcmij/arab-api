@@ -1,11 +1,11 @@
 import sgMail from '@sendgrid/mail';
 import { compose } from 'compose-middleware';
-import { NextFunction, Request, Response } from 'express';
+import { NextFunction, Request, Response, RequestHandler } from 'express';
 import expressJwt from 'express-jwt';
 import jwt from 'jsonwebtoken';
 import User, { IUser } from '../models/User';
 import { assertIsString } from '../util';
-import { ApiError } from '../api/ApiError';
+import { withError } from '../api/ApiError';
 
 const EXPIRES_IN_SECONDS = 30 * 24 * 60 * 60; // 30 days * hours * minutes * seconds
 
@@ -24,14 +24,14 @@ const validateOptionalJwt = expressJwt({
 export const maybeAuthenticated = compose([
   validateOptionalJwt,
   async (req: Request, res: Response, next: NextFunction) => {
-    const errorHandler = new ApiError(next);
+    const nextWithError = withError(next);
     try {
       if (req.user) {
         // Try and replace JWT user info with full info
         // from database.
         const user = await User.findById(req.user.id);
         if (user == null) {
-          return void errorHandler.passToNext({
+          return void nextWithError({
             status: 401,
             i18nKey: 'unknown_user',
           });
@@ -40,7 +40,7 @@ export const maybeAuthenticated = compose([
       }
       next();
     } catch (error) {
-      errorHandler.passToNext({
+      nextWithError({
         i18nKey: 'invalid_token',
         status: 401,
         logMsg: `id (${req.user?.id ?? 'anonymous'}) user requested: ${
@@ -54,11 +54,11 @@ export const maybeAuthenticated = compose([
 export const isAuthenticated = compose([
   validateJwt,
   async (req: Request, res: Response, next: NextFunction) => {
-    const errorHandler = new ApiError(next);
+    const nextWithError = withError(next);
     try {
       const user = await User.findById(req.user?.id);
       if (!user) {
-        return void errorHandler.passToNext({
+        return void nextWithError({
           status: 401,
           i18nKey: 'unknown_user',
         });
@@ -66,7 +66,7 @@ export const isAuthenticated = compose([
       req.user = user;
       next();
     } catch (error) {
-      errorHandler.passToNext({
+      nextWithError({
         status: 500,
         i18nKey: 'server_error',
         logMsg: `id (${req.user?.id}) user requested: ${error.message}`,
@@ -79,7 +79,7 @@ export const isAdmin = compose([
   isAuthenticated,
   (req: Request, res: Response, next: NextFunction) => {
     if (!req.user!.admin) {
-      return void ApiError.passNext(next, {
+      return void withError(next)({
         status: 403,
         i18nKey: 'forbidden',
       });
@@ -96,13 +96,9 @@ const signToken = (id: string): string =>
 /**
  * Set token cookie directly for oAuth strategies
  */
-export const setTokenCookie = (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const setTokenCookie: RequestHandler = (req, res, next) => {
   if (!req.user) {
-    return void ApiError.passNext(next, {
+    return void withError(next)({
       status: 404,
       i18nKey: 'something_went_wrong',
     });
@@ -115,13 +111,9 @@ export const setTokenCookie = (
   res.redirect(redirectUrl);
 };
 
-export const sendAuthToken = (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const sendAuthToken: RequestHandler = (req, res, next) => {
   if (!req.user) {
-    return void ApiError.passNext(next, {
+    return void withError(next)({
       status: 404,
       i18nKey: 'something_went_wrong',
     });

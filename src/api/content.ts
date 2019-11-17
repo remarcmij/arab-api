@@ -1,17 +1,11 @@
 import crypto from 'crypto';
 import fm from 'front-matter';
-import fs from 'fs';
-import _glob from 'glob';
-import path from 'path';
-import util from 'util';
 import logger from '../config/logger';
 import { ILemma } from '../models/Lemma';
 import { ITopic } from '../models/Topic';
 import * as db from './db';
 import { parseBody } from './parser';
 import { AppError } from '../util';
-
-const glob = util.promisify(_glob);
 
 type TopicDisposition = {
   disposition: 'success' | 'unchanged';
@@ -24,17 +18,25 @@ interface IAttributes {
   index?: boolean;
 }
 
-const CONTENT_DIR = path.join(
-  __dirname,
-  process.env.NODE_ENV === 'production'
-    ? '../../content'
-    : '../../../arab-content/content',
-);
-
 function computeSha(data: string) {
   const shaSum = crypto.createHash('sha1');
   shaSum.update(data);
   return shaSum.digest('hex');
+}
+
+export function validateDocumentPayload<T extends { index?: boolean }>(
+  data: string,
+) {
+  const fmResult = fm<T>(data);
+
+  const hasAttributes = !!Object.keys(fmResult.attributes).length;
+  if (!hasAttributes) {
+    throw new AppError('invalid empty markdown head file.');
+  }
+
+  const parserResult = parseBody(fmResult.body);
+
+  return { fmResult, parserResult };
 }
 
 export async function addORReplaceTopic(
@@ -80,35 +82,6 @@ export async function addORReplaceTopic(
   await db.insertTopic(topic, lemmas);
 
   return { disposition: 'success' };
-}
-
-export function validateDocumentPayload<T extends { index?: boolean }>(
-  data: string,
-) {
-  const fmResult = fm<T>(data);
-
-  const hasAttributes = !!Object.keys(fmResult.attributes).length;
-  if (!hasAttributes) {
-    throw new AppError('invalid empty markdown head file.');
-  }
-
-  // const hasBody = !!fmResult.body.replace(/\r?\n/gi, '').trim();
-
-  // const { index: isIndex } = fmResult.attributes;
-
-  // if (!hasBody && !isIndex) {
-  //   throw new AppError('invalid empty markdown body file.');
-  // }
-
-  // if (isIndex && hasBody) {
-  //   throw new AppError(
-  //     'invalid markdown body file, an index should not contain a body.',
-  //   );
-  // }
-
-  const parserResult = parseBody(fmResult.body);
-
-  return { fmResult, parserResult };
 }
 
 export function validateDocumentName(file: { originalname: string }) {

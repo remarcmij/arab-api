@@ -28,7 +28,6 @@ An index file contains a YAML header with meta data describing the publication a
 | title | string | Yes | The title of the publication. |
 | subtitle | string | No | An optional subtitle. |
 | restricted | boolean | No | (default: `true`) Determines whether the publication is restricted to registered users or publically available. |
-| index | boolean | No | (default: `false`) Determines whether the publication is an index. |
 
 > TODO: add author, publication date and copyright owner? Any other fields?
 

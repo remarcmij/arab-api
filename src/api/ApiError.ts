@@ -18,23 +18,14 @@ const defaultParams = {
   error: null,
 };
 
-export class ApiError extends AppError {
+class ApiError extends AppError {
   public readonly status!: number;
   public readonly logMsg?: string;
-  private readonly _next?: NextFunction;
 
-  constructor(params: IApiErrorParams);
-  constructor(next: NextFunction, ...args: any);
-
-  constructor(paramsORNext: IApiErrorParams | NextFunction, ...args: any) {
-    if (typeof paramsORNext === 'function') {
-      super();
-      this._next = paramsORNext.bind(paramsORNext, ...args);
-      return;
-    }
+  constructor(params: IApiErrorParams) {
     const { status, i18nKey, logMsg, error } = {
       ...defaultParams,
-      ...paramsORNext,
+      ...params,
     };
     if (error) {
       super(error.message);
@@ -46,16 +37,12 @@ export class ApiError extends AppError {
     this.status = status;
     this.name = 'ApiError';
   }
-
-  static passNext(next: NextFunction, params: IApiErrorParams) {
-    const e = new ApiError(params);
-    return next(e), e;
-  }
-
-  public passToNext(params: IApiErrorParams) {
-    return void ApiError.passNext(this._next!, params);
-  }
 }
 
-export const withError = (next: NextFunction) => (params: IApiErrorParams) =>
-  void next(new ApiError(params));
+type ErrorHandler = (params: IApiErrorParams) => void;
+
+export const withError = (next: NextFunction, ...args: any): ErrorHandler => {
+  return function(params) {
+    return next(...args, new ApiError(params));
+  };
+};

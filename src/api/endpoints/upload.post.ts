@@ -1,6 +1,6 @@
-import { NextFunction, Request, Response } from 'express';
+import { RequestHandler } from 'express';
 import path from 'path';
-import { ApiError } from '../ApiError';
+import { withError } from '../ApiError';
 import {
   addORReplaceTopic,
   validateDocumentName,
@@ -8,18 +8,14 @@ import {
 } from '../content';
 import { debouncedRebuildAutoCompletions } from '../db';
 
-export const postUpload = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const postUpload: RequestHandler = async (req, res, next) => {
   const data = req.file.buffer.toString('utf8');
-  const errorHandler = new ApiError(next);
+  const nextWithError = withError(next);
   try {
     const isDocumentValidName = validateDocumentName(req.file);
 
     if (!isDocumentValidName) {
-      return void errorHandler.passToNext({
+      return void nextWithError({
         status: 400,
         i18nKey: 'invalid_upload_filename',
         logMsg: `upload: invalid filename ${req.file.originalname}`,
@@ -33,6 +29,6 @@ export const postUpload = async (
     debouncedRebuildAutoCompletions();
     res.status(200).json(disposition);
   } catch (error) {
-    errorHandler.passToNext({ status: 400, error });
+    nextWithError({ status: 400, error });
   }
 };

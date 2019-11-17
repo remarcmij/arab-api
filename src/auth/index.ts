@@ -6,7 +6,7 @@ import i18next from 'i18next';
 import jwt from 'jsonwebtoken';
 import _template from 'lodash.template';
 import passport from 'passport';
-import { ApiError } from '../api/ApiError';
+import { withError } from '../api/ApiError';
 import logger from '../config/logger';
 import User, { encryptPassword, IUser } from '../models/User';
 import { assertIsString } from '../util';
@@ -60,12 +60,10 @@ router.post(
         return next(error);
       }
       if (!user) {
-        return next(
-          new ApiError({
-            status: 401,
-            i18nKey: 'something_went_wrong',
-          }),
-        );
+        return withError(next)({
+          status: 401,
+          i18nKey: 'something_went_wrong',
+        });
       }
       req.user = user;
       next();
