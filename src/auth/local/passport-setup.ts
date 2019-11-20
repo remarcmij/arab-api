@@ -10,7 +10,7 @@ passport.use(
       passwordField: 'password',
     },
     async (email, password, done) => {
-      const nextWithError = withError(done, null, false);
+      const nextWithError = withError(done);
       try {
         const user = await User.findOne({ email });
         if (!user) {

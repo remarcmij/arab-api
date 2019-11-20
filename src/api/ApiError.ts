@@ -39,10 +39,5 @@ class ApiError extends AppError {
   }
 }
 
-type ErrorHandler = (params: IApiErrorParams) => void;
-
-export const withError = (next: NextFunction, ...args: any): ErrorHandler => {
-  return function(params) {
-    return next(...args, new ApiError(params));
-  };
-};
+export const withError = (next: NextFunction) => (params: IApiErrorParams) =>
+  next(new ApiError(params));
