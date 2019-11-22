@@ -1,7 +1,6 @@
 import sgMail from '@sendgrid/mail';
 import { RequestHandler } from 'express';
 import { sanitizeBody } from 'express-validator/filter';
-import i18next from 'i18next';
 import jwt from 'jsonwebtoken';
 import _template from 'lodash.template';
 import User, { encryptPassword, IUser } from '../../models/User';
@@ -10,6 +9,7 @@ import { assertIsString } from '../../util';
 import { validateRouteBody } from '../../middleware/route-validator';
 import emailTemplate from '../templates/confirmation';
 import { handleRequestErrors } from '../../middleware/route-validator';
+import { withError } from '../../api/ApiError';
 
 const compiledTemplate = _template(emailTemplate);
 const PASSWORD_MIN_LENGTH = 8;
@@ -32,11 +32,13 @@ export const postAuthSignup: RequestHandler = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
     let user = await User.findOne({ email });
-
+    const nextWithError = withError(next);
+    
     if (user) {
-      return res
-        .status(400)
-        .json({ message: i18next.t('email_already_registered') });
+      return nextWithError({
+        status: 400,
+        i18nKey: 'email_already_registered',
+      });
     }
 
     const hashedPassword = await encryptPassword(password);
@@ -62,7 +64,11 @@ export const postAuthSignup: RequestHandler = async (req, res, next) => {
 
     // Check if not token
     if (!token) {
-      return res.status(401).json({ msg: 'No token, authorization denied' });
+      return nextWithError({
+        status: 401,
+        i18nKey: 'empty_login_token',
+        logMsg: `No token registered while (${user.email}) signup request.`,
+      });
     }
 
     const link =

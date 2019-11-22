@@ -1,11 +1,12 @@
 import { RequestHandler } from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../../models/User';
-import logger from '../../config/logger';
 import { assertIsString } from '../../util';
+import { withError } from '../../api/ApiError';
 
-export const postAuthConfirmation: RequestHandler = async (req, res) => {
+export const postAuthConfirmation: RequestHandler = async (req, res, next) => {
   const { token } = req.body;
+  const nextWithError = withError(next);
 
   try {
     assertIsString(process.env.CONFIRMATION_SECRET);
@@ -18,27 +19,33 @@ export const postAuthConfirmation: RequestHandler = async (req, res) => {
     const user = await User.findById({ _id: id });
 
     if (!user) {
-      return res
-        .status(400)
-        .json({ error: 'user-not-found', msg: req.t('user_not_found') });
+      return nextWithError({
+        status: 400,
+        i18nKey: 'user_not_found',
+      });
     }
 
     if (user.verified) {
-      return res
-        .status(400)
-        .json({ error: 'already-verified', msg: req.t('already_verified') });
+      return nextWithError({
+        status: 400,
+        i18nKey: 'already_verified',
+      });
     }
 
-    res.status(200).json({ msg: req.t('account_verified') });
+    res.status(200).json({ message: req.t('account_verified') });
     user.verified = true;
     await user.save();
-  } catch (err) {
-    logger.error(err.message);
-    if (err.name === 'TokenExpiredError') {
-      return res
-        .status(404)
-        .json({ error: 'token-expired', msg: req.t('token_expired') });
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return nextWithError({
+        status: 404,
+        i18nKey: 'token_expired',
+      });
     }
-    res.status(500).json({ error: 'server-error', msg: req.t('server_error') });
+    nextWithError({
+      status: 500,
+      i18nKey: 'server_error',
+      logMsg: `Tokenizing error: ${error.message}`,
+    });
   }
 };
