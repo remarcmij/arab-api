@@ -1,7 +1,7 @@
 import { ErrorRequestHandler } from 'express';
 import i18next from 'i18next';
-import logger from '../../config/logger';
-import { isSystemError, AppError } from '../../util';
+import logger from '../config/logger';
+import { isSystemError, AppError } from '../util';
 
 export const sysErrorsHandler: ErrorRequestHandler = (
   error,

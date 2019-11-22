@@ -25,7 +25,8 @@
     "taskqueue",
     "typesafe",
     "uuidv",
-    "wordlist"
+    "wordlist",
+    "signup"
   ],
   "cSpell.ignorePaths": [
     "**/package-lock.json",

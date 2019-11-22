@@ -5,7 +5,7 @@ import { NextFunction } from 'express';
 
 type LocaleKeys = keyof typeof locales;
 
-type IApiErrorParams = {
+export type IApiErrorParams = {
   status: number;
   i18nKey?: LocaleKeys;
   logMsg?: string;

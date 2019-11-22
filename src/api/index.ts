@@ -4,12 +4,12 @@ import {
   isAdmin,
   isAuthenticated,
   maybeAuthenticated,
-} from '../auth/auth-service';
+} from '../auth/services';
 import '../auth/local/passport-setup';
 import {
   checkRequiredFields,
   handleRequestErrors,
-} from './middleware/route-validator';
+} from '../middleware/route-validator';
 import {
   getRoot,
   getAll,
