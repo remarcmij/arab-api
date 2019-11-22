@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
-import { RequestHandler } from 'express';
+import { RequestHandler, Request } from 'express';
 import { withError } from '../../api/ApiError';
+import { assertIsString } from '../../util';
 
 const EXPIRES_IN_SECONDS = 30 * 24 * 60 * 60; // 30 days * hours * minutes * seconds
 
@@ -39,4 +40,26 @@ export const sendAuthToken: RequestHandler = (req, res, next) => {
   }
   const token = signToken(req.user.id);
   res.json({ token });
+};
+
+export const generateConfirmationToken = async (req: Request) => {
+  const payload = {
+    user: {
+      id: req.user?.id,
+    },
+  };
+
+  assertIsString(process.env.CONFIRMATION_SECRET);
+  const confirmationSecret = process.env.CONFIRMATION_SECRET;
+  const token = await jwt.sign(payload, confirmationSecret!, {
+    expiresIn: '12h',
+  });
+
+  return token;
+};
+
+export const decodeToken = (token: string) => {
+  token = token.replace(/^Bearer\s/, '');
+  const decoded = jwt.decode(token);
+  return decoded;
 };

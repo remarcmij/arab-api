@@ -16,6 +16,7 @@ import connectDB from './config/db';
 import logger from './config/logger';
 import { sysErrorsHandler, userErrorsHandler } from './error-establisher';
 import localesRouter from './locales';
+import { linkGeneratorTORequest } from './middleware/helpers';
 
 const PORT = 8080; // default port to listen
 
@@ -63,6 +64,8 @@ i18next
   app.use(express.static(docRoot, staticOptions));
   app.use(i18middleware.handle(i18next));
   app.use(passport.initialize());
+
+  app.use(linkGeneratorTORequest);
 
   app.use('/api', apiRouter);
   app.use('/auth', authRouter);

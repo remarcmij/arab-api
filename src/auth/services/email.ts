@@ -1,6 +1,41 @@
 import sgMail from '@sendgrid/mail';
 import { IUser } from '../../models/User';
 import { assertIsString } from '../../util';
+import _template from 'lodash.template';
+import i18next from 'i18next';
+
+type MailOptions = {
+  email: string;
+  name: string;
+  type: 'verification'; // todo: add more types when needed.
+  emailTemplate: string;
+  mainButtonLink?: string;
+};
+
+export const sendUserConfirmationMail = async (mailOptions: MailOptions) => {
+  const { email, emailTemplate, type, mainButtonLink, name } = mailOptions;
+  const compiledTemplate = _template(emailTemplate);
+
+  const link = mainButtonLink;
+
+  const subject = i18next.t(`${type}_email.subject`);
+  const values: object = i18next.t(`${type}_email.body`, {
+    returnObjects: true,
+    name,
+  });
+  const html = compiledTemplate({ link, ...values });
+
+  const msg = {
+    from: 'noreply@taalmap.nl',
+    to: email,
+    subject,
+    html,
+  };
+
+  assertIsString(process.env.SENDGRID_API_KEY);
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+  await sgMail.send(msg);
+};
 
 // TODO: send an email to the admin when an account is
 // verified so that it can be considered for authorization.

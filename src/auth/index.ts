@@ -1,3 +1,4 @@
+import express, { Request, Response } from 'express';
 import {
   getAuthGoogle,
   getAuthGoogleCallback,
@@ -7,9 +8,13 @@ import {
   postAuthLoginChecks,
   postAuthSignupChecks,
   postAuthSignup,
+  getAuthToken,
 } from './endpoints';
-import express, { Request, Response } from 'express';
-import { isAuthenticated, sendAuthToken, setTokenCookie } from './services';
+import {
+  isAuthenticated,
+  sendAuthToken,
+  setTokenCookie,
+} from './services';
 import './google/passport-setup';
 
 const router = express.Router();
@@ -23,6 +28,8 @@ router.post('/login', postAuthLoginChecks, postAuthLogin, sendAuthToken);
 router.post('/signup', postAuthSignupChecks, postAuthSignup, sendAuthToken);
 
 router.post('/confirmation', postAuthConfirmation);
+
+router.get('/token', isAuthenticated, getAuthToken);
 
 router.get('/', isAuthenticated, getAuthRoot);
 
