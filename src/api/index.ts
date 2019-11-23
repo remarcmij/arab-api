@@ -4,14 +4,15 @@ import {
   isAdmin,
   isAuthenticated,
   maybeAuthenticated,
-} from '../auth/auth-service';
+} from '../auth/services';
 import '../auth/local/passport-setup';
 import {
   checkRequiredFields,
   handleRequestErrors,
-} from './middleware/route-validator';
+} from '../middleware/route-validator';
 import {
   getRoot,
+  getAll,
   postUpload,
   deleteTopic,
   getProfile,
@@ -29,10 +30,11 @@ const uploadSingleFile = multer().single('file');
  * description: Returns a list of publications topics
  */
 apiRouter.get('/', maybeAuthenticated, getRoot);
+apiRouter.get('/all', getAll);
 
 apiRouter.post('/upload', isAdmin, uploadSingleFile, postUpload);
 
-apiRouter.delete('/topic/:filename', isAdmin, deleteTopic);
+apiRouter.delete('/topic/:filename', isAdmin, deleteTopic, getAll);
 
 apiRouter.get('/profile', isAuthenticated, getProfile);
 

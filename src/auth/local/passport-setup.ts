@@ -1,6 +1,6 @@
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
-import { ApiError } from '../../api/ApiError';
+import { withError } from '../../api/ApiError';
 import User, { validatePassword as comparePassword } from '../../models/User';
 
 passport.use(
@@ -10,11 +10,11 @@ passport.use(
       passwordField: 'password',
     },
     async (email, password, done) => {
-      const errorHandler = new ApiError(done, null, false);
+      const nextWithError = withError(done);
       try {
         const user = await User.findOne({ email });
         if (!user) {
-          return void errorHandler.passToNext({
+          return void nextWithError({
             status: 401,
             i18nKey: 'invalid_credentials',
             logMsg: `(${email}) user not found`,
@@ -23,7 +23,7 @@ passport.use(
         const validated =
           !!user.password && (await comparePassword(password, user.password));
         if (!validated) {
-          return void errorHandler.passToNext({
+          return void nextWithError({
             status: 401,
             i18nKey: 'invalid_credentials',
             logMsg: `(${user.email}) invalid password`,
@@ -31,7 +31,7 @@ passport.use(
         }
         return done(null, user);
       } catch (error) {
-        new ApiError(done).passToNext({
+        withError(done)({
           error,
           status: 500,
         });

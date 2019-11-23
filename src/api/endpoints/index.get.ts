@@ -1,13 +1,9 @@
 import * as db from '../db';
-import { Request, Response, NextFunction } from 'express';
+import { RequestHandler } from 'express';
 import { isAuthorized } from '../../models/User';
-import { ApiError } from '../ApiError';
+import { withError } from '../ApiError';
 
-export const getIndex = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const getIndex: RequestHandler = async (req, res, next) => {
   try {
     const topics = await db.getArticleTopics(req.params.publication);
     const userRelatedTopics = topics.filter(
@@ -15,6 +11,6 @@ export const getIndex = async (
     );
     res.json(userRelatedTopics);
   } catch (error) {
-    ApiError.passNext(next, { error, status: 500 });
+    withError(next)({ error, status: 500 });
   }
 };

@@ -1,5 +1,6 @@
 {
   "cSpell.words": [
+    "Dropzone",
     "Romanization",
     "SENDGRID",
     "Tashkeel",
@@ -12,16 +13,20 @@
     "maxsize",
     "noreply",
     "openid",
+    "originalname",
     "printf",
     "shhh",
     "signin",
     "stemword",
     "strikethrough",
     "subfolder",
+    "svgrepo",
     "taalmap",
     "taskqueue",
     "typesafe",
-    "wordlist"
+    "uuidv",
+    "wordlist",
+    "signup"
   ],
   "cSpell.ignorePaths": [
     "**/package-lock.json",

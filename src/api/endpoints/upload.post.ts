@@ -1,20 +1,21 @@
-import { Request, Response, NextFunction } from 'express';
-import { validateDocumentPayload, addORReplaceTopic } from '../content';
-import { validateDocumentName } from '../content';
-import { ApiError } from '../ApiError';
+import { RequestHandler } from 'express';
+import path from 'path';
+import { withError } from '../ApiError';
+import {
+  addORReplaceTopic,
+  validateDocumentName,
+  validateDocumentPayload,
+} from '../content';
+import { debouncedRebuildAutoCompletions } from '../db';
 
-export const postUpload = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const postUpload: RequestHandler = async (req, res, next) => {
   const data = req.file.buffer.toString('utf8');
-  const errorHandler = new ApiError(next);
+  const nextWithError = withError(next);
   try {
     const isDocumentValidName = validateDocumentName(req.file);
 
     if (!isDocumentValidName) {
-      return void errorHandler.passToNext({
+      return void nextWithError({
         status: 400,
         i18nKey: 'invalid_upload_filename',
         logMsg: `upload: invalid filename ${req.file.originalname}`,
@@ -23,9 +24,11 @@ export const postUpload = async (
 
     validateDocumentPayload(data);
 
-    await addORReplaceTopic(req.file.originalname, data);
-    res.sendStatus(200);
+    const filename = path.parse(req.file.originalname).name;
+    const disposition = await addORReplaceTopic(filename, data);
+    debouncedRebuildAutoCompletions();
+    res.status(200).json(disposition);
   } catch (error) {
-    errorHandler.passToNext({ status: 400, error });
+    nextWithError({ status: 400, error });
   }
 };

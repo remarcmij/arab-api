@@ -1,13 +1,9 @@
 import * as db from '../db';
 import { isAuthorized } from '../../models/User';
-import { Request, Response, NextFunction } from 'express';
-import { ApiError } from '../ApiError';
+import { RequestHandler } from 'express';
+import { withError } from '../ApiError';
 
-export const getRoot = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
+export const getRoot: RequestHandler = async (req, res, next) => {
   try {
     const topics = await db.getIndexTopics();
     const userRelatedTopics = topics.filter(
@@ -15,6 +11,15 @@ export const getRoot = async (
     );
     res.json(userRelatedTopics);
   } catch (error) {
-    ApiError.passNext(next, { error, status: 500 });
+    withError(next)({ error, status: 500 });
+  }
+};
+
+export const getAll: RequestHandler = async (req, res, next) => {
+  try {
+    const topics = await db.getAllTopics();
+    res.json(topics);
+  } catch (error) {
+    withError(next)({ error, status: 500 });
   }
 };

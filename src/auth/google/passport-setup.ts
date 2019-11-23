@@ -5,8 +5,8 @@ import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import logger from '../../config/logger';
 import User, { IUser, IUserDocument } from '../../models/User';
 import { assertIsString } from '../../util';
-import { sendMail } from '../auth-service';
-import { ApiError } from '../../api/ApiError';
+import { sendMail } from '../services';
+import { withError } from '../../api/ApiError';
 
 interface IGoogleProfile {
   id: string;
@@ -55,7 +55,7 @@ async function verify(
     }
     done(null, user);
   } catch (error) {
-    new ApiError(done).passToNext({
+    withError(done)({
       error,
       status: 500,
     });

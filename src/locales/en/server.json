@@ -22,6 +22,8 @@
   "something_went_wrong": "Something went wrong.",
   "token_expired": "The verification link has expired.",
   "invalid_token": "Invalid token",
+  "empty_login_token": "No token, authorization denied",
+  "too_early": "Request is too early",
   "unauthorized": "Unauthorized",
   "forbidden": "Forbidden",
   "unexpected_error": "The server encountered an unexpected error.",
