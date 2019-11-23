@@ -1,5 +1,5 @@
 import emailTemplate from '../templates/confirmation';
-import { generateConfirmationToken, sendUserConfirmationMail } from '../services';
+import { generateConfirmationToken, sendTemplateMail } from '../services';
 import { Request, NextFunction } from 'express';
 import { withError } from '../../api/ApiError';
 
@@ -27,7 +27,7 @@ export const sendConfirmationToken = async (req: Request, next: NextFunction) =>
 
   const link = req.clientLinkGenerator(`/confirmation/${token}`)
 
-  await sendUserConfirmationMail({
+  await sendTemplateMail({
     email: req.user?.email as string,
     emailTemplate,
     name: req.user?.name as string,

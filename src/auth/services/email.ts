@@ -12,7 +12,7 @@ type MailOptions = {
   mainButtonLink?: string;
 };
 
-export const sendUserConfirmationMail = async (mailOptions: MailOptions) => {
+export const sendTemplateMail = async (mailOptions: MailOptions) => {
   const { email, emailTemplate, type, mainButtonLink, name } = mailOptions;
   const compiledTemplate = _template(emailTemplate);
 
