@@ -29,3 +29,26 @@ export const isSystemError = (error: Error & { errno?: number }) => {
   }
   return hasSystemErrorName;
 };
+
+export async function consoleOnDevelopment(
+  callback: Function,
+  callOnProduction?: Function,
+): Promise<any>;
+export async function consoleOnDevelopment(
+  callback: Function,
+  _args?: Array<any> | Function,
+): Promise<any> {
+  assertIsString(process.env.NODE_ENV);
+
+  const isArgsArray = Array.isArray(_args) ? [..._args] : undefined;
+  const result = await callback.apply(callback, isArgsArray);
+
+  if (process.env.NODE_ENV === 'development') {
+    console.log(result);
+    return void 0;
+  }
+
+  if (!isArgsArray) {
+    await (isArgsArray as unknown as Function)();
+  }
+}

@@ -1,6 +1,5 @@
 import { RequestHandler } from 'express';
 import { sanitizeBody } from 'express-validator/filter';
-import _template from 'lodash.template';
 import { sendConfirmationToken } from '.';
 import User, { encryptPassword, IUser } from '../../models/User';
 import logger from '../../config/logger';
@@ -10,18 +9,22 @@ import { withError } from '../../api/ApiError';
 
 const PASSWORD_MIN_LENGTH = 8;
 
-export const postAuthSignupChecks = [
-  validateRouteBody('name', 'user_name_required')
-    .not()
-    .isEmpty(),
-  validateRouteBody('email', 'email_required').isEmail(),
-  sanitizeBody('email').normalizeEmail(),
+export const postAuthPasswordChecks = [
   validateRouteBody('password', 'password_min_length', {
     minLength: PASSWORD_MIN_LENGTH,
   }).isLength({
     min: PASSWORD_MIN_LENGTH,
   }),
   handleRequestErrors,
+];
+
+export const postAuthSignupChecks = [
+  validateRouteBody('name', 'user_name_required')
+    .not()
+    .isEmpty(),
+  validateRouteBody('email', 'email_required').isEmail(),
+  sanitizeBody('email').normalizeEmail(),
+  ...postAuthPasswordChecks,
 ];
 
 export const postAuthSignup: RequestHandler = async (req, res, next) => {
