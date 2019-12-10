@@ -30,9 +30,9 @@ router.post('/confirmation', postAuthConfirmation);
 
 router.get('/password', isAuthenticated, getAuthResetPassRequest);
 
-// todo: make this a `patch request`.
+// todo: make this a `patch request` and `passwordChange`.
 router.post(
-  '/password/:tokenString',
+  '/password',
   isAuthenticated,
   postAuthPasswordChecks,
   postAuthPassword,
@@ -40,9 +40,9 @@ router.post(
 );
 
 // * password forgotten.
-router.post('/password', () => {
-  /* do something. */
-});
+// router.post('/password', () => {
+//   /* do something. */
+// });
 
 router.get('/token/:tokenString', isAuthenticated, getAuthToken);
 
