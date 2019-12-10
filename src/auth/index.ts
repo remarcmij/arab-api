@@ -9,12 +9,11 @@ import {
   postAuthSignupChecks,
   postAuthSignup,
   getAuthToken,
+  getAuthResetPassRequest,
+  postAuthPassword,
+  postAuthPasswordChecks,
 } from './endpoints';
-import {
-  isAuthenticated,
-  sendAuthToken,
-  setTokenCookie,
-} from './services';
+import { isAuthenticated, sendAuthToken, setTokenCookie } from './services';
 import './google/passport-setup';
 
 const router = express.Router();
@@ -29,7 +28,23 @@ router.post('/signup', postAuthSignupChecks, postAuthSignup, sendAuthToken);
 
 router.post('/confirmation', postAuthConfirmation);
 
-router.get('/token', isAuthenticated, getAuthToken);
+router.get('/password', isAuthenticated, getAuthResetPassRequest);
+
+// todo: make this a `patch request` and `passwordChange`.
+router.post(
+  '/password',
+  isAuthenticated,
+  postAuthPasswordChecks,
+  postAuthPassword,
+  sendAuthToken,
+);
+
+// * password forgotten.
+// router.post('/password', () => {
+//   /* do something. */
+// });
+
+router.get('/token/:tokenString', isAuthenticated, getAuthToken);
 
 router.get('/', isAuthenticated, getAuthRoot);
 

@@ -1,25 +1,19 @@
 import { RequestHandler } from 'express';
 import { withError } from '../../api/ApiError';
 import { decodeToken } from '../services';
-import { sendConfirmationToken } from '.';
+import { sendResetPasswordToken } from '.';
 
-export const getAuthToken: RequestHandler = async (req, res, next) => {
+export const getAuthResetPassRequest: RequestHandler = async (req, res, next) => {
   const nextWithError = withError(next);
   try {
-    if (req.user?.verified) {
-      return nextWithError({
-        status: 400,
-        i18nKey: 'already_verified',
-      });
-    }
 
-    const token = req.params.tokenString;
+    const token = req.get('Authorization');
 
     if (!token) {
       return nextWithError({
         status: 400,
         i18nKey: 'unexpected_error',
-        logMsg: `requested confirmation token with no valid credentials by: ${req.user?.email}`,
+        logMsg: `requested password reset token with no valid credentials by: ${req.user?.email || 'unknown'}`,
       });
     }
 
@@ -37,12 +31,12 @@ export const getAuthToken: RequestHandler = async (req, res, next) => {
       });
     }
 
-    await sendConfirmationToken(req, next);
+    await sendResetPasswordToken(req, next);
 
     delete req.user?.password;
     res.json(req.user);
   } catch (error) {
-    withError(next)({
+    nextWithError({
       status: 500,
       i18nKey: 'server_error',
     });

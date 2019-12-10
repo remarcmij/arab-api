@@ -27,7 +27,7 @@ const authenticateUserObject: AuthenticateUserObject = options => async (
 ) => {
   const nextWithError = withError(next);
   try {
-    let isUser = !!req.user;
+    const isUser = !!req.user;
     if (isUser) {
       // Try and replace JWT user info with full info
       // from database.

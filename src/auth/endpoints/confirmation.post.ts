@@ -38,7 +38,9 @@ export const postAuthConfirmation: RequestHandler = async (req, res, next) => {
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
       return nextWithError({
-        status: 404,
+        // For best practice see: https://tools.ietf.org/html/rfc6750#page-9
+        // since we are using them under the same scope name.
+        status: 401,
         i18nKey: 'token_expired',
       });
     }
