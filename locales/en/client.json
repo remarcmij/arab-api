@@ -41,7 +41,7 @@
   "current_password_label": "Current password",
   "new_password_label": "New password",
   "submit_button_label": "Submit",
-  "user_side_menu_header": "User",
+  "account_side_menu_header": "User account",
   "admin_side_menu_header": "Administration",
   "info_side_menu_header": "Information"
 }
