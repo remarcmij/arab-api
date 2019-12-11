@@ -1,5 +1,4 @@
-// tslint:disable-next-line: no-var-requires
-require('dotenv').load();
+require('dotenv').config();
 import compression from 'compression';
 import cors from 'cors';
 import exitHook from 'exit-hook';

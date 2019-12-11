@@ -1,5 +1,5 @@
 import locales from '../locales/en/server.json';
-import { check, body, validationResult } from 'express-validator/check';
+import { check, body, validationResult } from 'express-validator';
 import i18next from 'i18next';
 import { RequestHandler } from 'express';
 

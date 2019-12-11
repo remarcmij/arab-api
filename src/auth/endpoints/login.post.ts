@@ -1,9 +1,12 @@
 import { RequestHandler } from 'express';
-import { sanitizeBody } from 'express-validator/filter';
+import { sanitizeBody } from 'express-validator';
 import _template from 'lodash.template';
 import passport from 'passport';
 import { withError } from '../../api/ApiError';
-import { validateRouteBody, handleRequestErrors} from '../../middleware/route-validator';
+import {
+  validateRouteBody,
+  handleRequestErrors,
+} from '../../middleware/route-validator';
 
 export const postAuthLoginChecks = [
   validateRouteBody('email', 'email_required').isEmail(),

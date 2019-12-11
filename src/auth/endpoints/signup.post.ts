@@ -1,5 +1,5 @@
 import { RequestHandler } from 'express';
-import { sanitizeBody } from 'express-validator/filter';
+import { sanitizeBody } from 'express-validator';
 import { sendConfirmationToken } from '.';
 import User, { encryptPassword, IUser } from '../../models/User';
 import logger from '../../config/logger';
