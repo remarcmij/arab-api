@@ -1,17 +1,24 @@
-import emailTemplate from '../templates/confirmation';
-import { generateConfirmationToken, sendTemplateMail } from '../services';
-import { Request, NextFunction } from 'express';
+import { NextFunction, Request } from 'express';
 import { withError } from '../../api/ApiError';
 import { consoleOnDevelopment } from '../../util';
+import {
+  generateConfirmationToken,
+  MailOptionTypes,
+  sendTemplateMail,
+  signToken,
+} from '../services';
+import emailTemplate from '../templates/confirmation';
 
-export * from './google.get';
-export * from './root.get';
-export * from './password.get';
-export * from './password.post';
-export * from './token.get';
 export * from './confirmation.post';
+export * from './google.get';
 export * from './login.post';
+export * from './password.get';
+export * from './password.patch';
+export * from './password.post';
+export * from './root.get';
 export * from './signup.post';
+export * from './token.get';
+export * from './validationChecks';
 
 // helpers.
 
@@ -19,19 +26,20 @@ export * from './signup.post';
 export const sendConfirmationToken = async (
   req: Request,
   next: NextFunction,
+  _options: { type: MailOptionTypes; clientPath: string; expiresIn?: string },
 ) => {
-  const token = await generateConfirmationToken(req);
+  const token = await generateConfirmationToken(req, _options.expiresIn);
 
   // Check if not token
   if (!token) {
     return withError(next)({
       status: 401,
       i18nKey: 'empty_login_token',
-      logMsg: `No token registered while (${req.user?.email}) signup request.`,
+      logMsg: `No token registered while (${req.user?.email}) ${_options.type} request.`,
     });
   }
 
-  const link = req.clientLinkGenerator(`/confirmation/${token}`);
+  const link = req.clientLinkGenerator(`/${_options.clientPath}/${token}`);
 
   await consoleOnDevelopment(
     () => link,
@@ -40,29 +48,30 @@ export const sendConfirmationToken = async (
         email: req.user?.email as string,
         emailTemplate,
         name: req.user?.name as string,
-        type: 'verification',
+        type: _options.type,
         mainButtonLink: link,
       }),
   );
 };
 
-// Password token helper:
-export const sendResetPasswordToken = async (
+// Custom login token helper:
+export const sendCustomLoginToken = async (
   req: Request,
   next: NextFunction,
+  _options: { type: MailOptionTypes; clientPath: string; expiresIn?: string },
 ) => {
-  const token = await generateConfirmationToken(req);
+  const token = signToken(req.user?.id, _options.expiresIn);
 
   // Check if not token
   if (!token) {
     return withError(next)({
       status: 401,
       i18nKey: 'empty_login_token',
-      logMsg: `No token registered while (${req.user?.email}) password reset request.`,
+      logMsg: `No token registered while (${req.user?.email}) ${_options.type} request.`,
     });
   }
 
-  const link = req.clientLinkGenerator(`/password/${token}`);
+  const link = req.clientLinkGenerator(`/${_options.clientPath}/${token}`);
 
   await consoleOnDevelopment(
     () => link,

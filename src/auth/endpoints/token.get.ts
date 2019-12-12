@@ -37,7 +37,10 @@ export const getAuthToken: RequestHandler = async (req, res, next) => {
       });
     }
 
-    await sendConfirmationToken(req, next);
+    await sendConfirmationToken(req, next, {
+      clientPath: 'confirmation',
+      type: 'verification',
+    });
 
     delete req.user?.password;
     res.json(req.user);

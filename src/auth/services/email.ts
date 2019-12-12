@@ -4,7 +4,7 @@ import { assertIsString } from '../../util';
 import _template from 'lodash.template';
 import i18next from 'i18next';
 
-type MailOptionTypes = 'verification' | 'password-reset';
+export type MailOptionTypes = 'verification' | 'password-reset';
 
 type MailOptions = {
   email: string;
