@@ -36,19 +36,11 @@ router.get('/password', isAuthenticated, getAuthResetPassRequest);
 router.patch(
   '/password/change',
   isAuthenticated,
-  patchAuthChangePassword.validators,
-  handleRequestErrors,
-  patchAuthChangePassword,
+  patchAuthChangePassword.handlers,
   sendAuthToken,
 );
 
-router.patch(
-  '/password/reset',
-  patchAuthResetPassword.validators,
-  handleRequestErrors,
-  patchAuthResetPassword,
-  sendAuthToken,
-);
+router.patch('/password/reset', patchAuthResetPassword.handlers, sendAuthToken);
 
 router.post('/password', postAuthEmailChecks, postAuthPassword);
 

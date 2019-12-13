@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import { withError } from '../../api/ApiError';
 import User, { encryptPassword, validatePassword } from '../../models/User';
 import { assertIsString } from '../../util';
+import { handleRequestErrors } from '../../middleware/route-validator';
 
 const PASSWORD_MIN_LENGTH = 8;
 
@@ -55,7 +56,7 @@ export const patchAuthChangePassword = async (
   }
 };
 
-patchAuthChangePassword.validators = [
+patchAuthChangePassword.handlers = [
   body(
     'password',
     i18n.t('password_min_length', { minLength: PASSWORD_MIN_LENGTH }),
@@ -63,6 +64,8 @@ patchAuthChangePassword.validators = [
   body('currentPassword', i18n.t('current_password_required'))
     .not()
     .isEmpty(),
+  handleRequestErrors,
+  patchAuthChangePassword,
 ];
 
 export const patchAuthResetPassword = async (
@@ -104,7 +107,7 @@ export const patchAuthResetPassword = async (
   }
 };
 
-patchAuthResetPassword.validators = [
+patchAuthResetPassword.handlers = [
   body('resetToken', i18n.t('reset_token_required'))
     .not()
     .isEmpty(),
@@ -112,4 +115,6 @@ patchAuthResetPassword.validators = [
     'password',
     i18n.t('password_min_length', { minLength: PASSWORD_MIN_LENGTH }),
   ).isLength({ min: PASSWORD_MIN_LENGTH }),
+  handleRequestErrors,
+  patchAuthResetPassword,
 ];
