@@ -1,7 +1,7 @@
 import { RequestHandler } from 'express';
 import { withError } from '../../api/ApiError';
 import { decodeToken } from '../services';
-import { sendConfirmationToken } from '.';
+import { emailConfirmationToken } from './helpers';
 
 export const getAuthToken: RequestHandler = async (req, res, next) => {
   const nextWithError = withError(next);
@@ -37,7 +37,7 @@ export const getAuthToken: RequestHandler = async (req, res, next) => {
       });
     }
 
-    await sendConfirmationToken(req, next, {
+    await emailConfirmationToken(req, next, {
       clientPath: 'confirmation',
       type: 'verification',
     });

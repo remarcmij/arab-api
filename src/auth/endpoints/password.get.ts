@@ -1,7 +1,7 @@
 import { RequestHandler } from 'express';
 import { withError } from '../../api/ApiError';
 import { decodeToken } from '../services';
-import { sendCustomLoginToken } from '.';
+import { emailResetToken } from './helpers';
 
 export const getAuthResetPassRequest: RequestHandler = async (
   req,
@@ -35,8 +35,7 @@ export const getAuthResetPassRequest: RequestHandler = async (
       });
     }
 
-    await sendCustomLoginToken(req, next, {
-      type: 'password-reset',
+    await emailResetToken(req, next, {
       clientPath: 'password',
     });
 

@@ -1,8 +1,8 @@
 import { RequestHandler } from 'express';
-import { sendConfirmationToken } from '.';
 import { withError } from '../../api/ApiError';
 import logger from '../../config/logger';
 import User, { encryptPassword, IUser } from '../../models/User';
+import { emailConfirmationToken } from './helpers';
 
 export const postAuthSignup: RequestHandler = async (req, res, next) => {
   try {
@@ -26,7 +26,7 @@ export const postAuthSignup: RequestHandler = async (req, res, next) => {
     user = await User.create(newUser);
     req.user = user;
 
-    await sendConfirmationToken(req, next, {
+    await emailConfirmationToken(req, next, {
       clientPath: 'confirmation',
       type: 'verification',
     });

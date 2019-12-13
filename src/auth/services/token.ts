@@ -53,8 +53,7 @@ export const generateConfirmationToken = async (
   };
 
   assertIsString(process.env.CONFIRMATION_SECRET);
-  const confirmationSecret = process.env.CONFIRMATION_SECRET;
-  const token = await jwt.sign(payload, confirmationSecret!, {
+  const token = jwt.sign(payload, process.env.CONFIRMATION_SECRET, {
     expiresIn: expiresIn || '12h',
   });
 
