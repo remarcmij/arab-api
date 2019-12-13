@@ -1,13 +1,17 @@
-import { RequestHandler } from 'express';
+import { NextFunction, Request, Response } from 'express';
+import { body } from 'express-validator';
+import i18n from 'i18next';
 import jwt from 'jsonwebtoken';
 import { withError } from '../../api/ApiError';
 import User, { encryptPassword, validatePassword } from '../../models/User';
 import { assertIsString } from '../../util';
 
-export const patchAuthChangePassword: RequestHandler = async (
-  req,
-  res,
-  next,
+const PASSWORD_MIN_LENGTH = 8;
+
+export const patchAuthChangePassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
 ) => {
   const nextWithError = withError(next);
   try {
@@ -51,10 +55,20 @@ export const patchAuthChangePassword: RequestHandler = async (
   }
 };
 
-export const patchAuthResetPassword: RequestHandler = async (
-  req,
-  res,
-  next,
+patchAuthChangePassword.validators = [
+  body(
+    'password',
+    i18n.t('password_min_length', { minLength: PASSWORD_MIN_LENGTH }),
+  ).isLength({ min: PASSWORD_MIN_LENGTH }),
+  body('currentPassword', i18n.t('current_password_required'))
+    .not()
+    .isEmpty(),
+];
+
+export const patchAuthResetPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
 ) => {
   const nextWithError = withError(next);
   try {
@@ -89,3 +103,13 @@ export const patchAuthResetPassword: RequestHandler = async (
     });
   }
 };
+
+patchAuthResetPassword.validators = [
+  body('resetToken', i18n.t('reset_token_required'))
+    .not()
+    .isEmpty(),
+  body(
+    'password',
+    i18n.t('password_min_length', { minLength: PASSWORD_MIN_LENGTH }),
+  ).isLength({ min: PASSWORD_MIN_LENGTH }),
+];
