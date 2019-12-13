@@ -9,7 +9,6 @@ import {
   getAuthRoot,
   getAuthToken,
   patchAuthChangePassword,
-  patchAuthPasswordChecks,
   patchAuthResetPassword,
   postAuthConfirmation,
   postAuthEmailChecks,
@@ -67,7 +66,6 @@ router.patch(
     ).isLength({ min: PASSWORD_MIN_LENGTH }),
   ],
   handleRequestErrors,
-  patchAuthPasswordChecks,
   patchAuthResetPassword,
   sendAuthToken,
 );
