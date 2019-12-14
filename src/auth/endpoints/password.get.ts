@@ -1,19 +1,23 @@
 import { RequestHandler } from 'express';
 import { withError } from '../../api/ApiError';
 import { decodeToken } from '../services';
-import { sendResetPasswordToken } from '.';
+import { emailResetToken } from './helpers';
 
-export const getAuthResetPassRequest: RequestHandler = async (req, res, next) => {
+export const getAuthResetPassRequest: RequestHandler = async (
+  req,
+  res,
+  next,
+) => {
   const nextWithError = withError(next);
   try {
-
     const token = req.get('Authorization');
 
     if (!token) {
       return nextWithError({
         status: 400,
         i18nKey: 'unexpected_error',
-        logMsg: `requested password reset token with no valid credentials by: ${req.user?.email || 'unknown'}`,
+        logMsg: `requested password reset token with no valid credentials by: ${req
+          .user?.email || 'unknown'}`,
       });
     }
 
@@ -31,7 +35,9 @@ export const getAuthResetPassRequest: RequestHandler = async (req, res, next) =>
       });
     }
 
-    await sendResetPasswordToken(req, next);
+    await emailResetToken(req, next, {
+      clientPath: 'password',
+    });
 
     delete req.user?.password;
     res.json(req.user);

@@ -1,20 +1,23 @@
 import express, { Request, Response } from 'express';
+import { handleRequestErrors } from '../middleware/route-validator';
 import {
   getAuthGoogle,
   getAuthGoogleCallback,
+  getAuthResetPassRequest,
   getAuthRoot,
+  getAuthToken,
+  patchAuthChangePassword,
+  patchAuthResetPassword,
   postAuthConfirmation,
+  postAuthEmailChecks,
   postAuthLogin,
   postAuthLoginChecks,
-  postAuthSignupChecks,
-  postAuthSignup,
-  getAuthToken,
-  getAuthResetPassRequest,
   postAuthPassword,
-  postAuthPasswordChecks,
+  postAuthSignup,
+  postAuthSignupChecks,
 } from './endpoints';
-import { isAuthenticated, sendAuthToken, setTokenCookie } from './services';
 import './google/passport-setup';
+import { isAuthenticated, sendAuthToken, setTokenCookie } from './services';
 
 const router = express.Router();
 
@@ -30,19 +33,16 @@ router.post('/confirmation', postAuthConfirmation);
 
 router.get('/password', isAuthenticated, getAuthResetPassRequest);
 
-// todo: make this a `patch request` and `passwordChange`.
-router.post(
-  '/password',
+router.patch(
+  '/password/change',
   isAuthenticated,
-  postAuthPasswordChecks,
-  postAuthPassword,
+  patchAuthChangePassword.handlers,
   sendAuthToken,
 );
 
-// * password forgotten.
-// router.post('/password', () => {
-//   /* do something. */
-// });
+router.patch('/password/reset', patchAuthResetPassword.handlers, sendAuthToken);
+
+router.post('/password', postAuthEmailChecks, postAuthPassword);
 
 router.get('/token/:tokenString', isAuthenticated, getAuthToken);
 

@@ -8,15 +8,15 @@ import { compose } from 'compose-middleware';
 type AuthenticateUserObject = (errorOptions: IApiErrorParams) => RequestHandler;
 
 // JS.
-const JWT_SECRET = process.env.JWT_SECRET ?? 'my_secret';
+const AUTH_SECRET = process.env.AUTH_SECRET ?? 'my_secret';
 
 const validateJwt = expressJwt({
-  secret: JWT_SECRET,
+  secret: AUTH_SECRET,
   credentialsRequired: true,
 });
 
 const validateOptionalJwt = expressJwt({
-  secret: JWT_SECRET,
+  secret: AUTH_SECRET,
   credentialsRequired: false,
 });
 

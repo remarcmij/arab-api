@@ -1,31 +1,8 @@
 import { RequestHandler } from 'express';
-import { sanitizeBody } from 'express-validator';
-import { sendConfirmationToken } from '.';
-import User, { encryptPassword, IUser } from '../../models/User';
-import logger from '../../config/logger';
-import { validateRouteBody } from '../../middleware/route-validator';
-import { handleRequestErrors } from '../../middleware/route-validator';
 import { withError } from '../../api/ApiError';
-
-const PASSWORD_MIN_LENGTH = 8;
-
-export const postAuthPasswordChecks = [
-  validateRouteBody('password', 'password_min_length', {
-    minLength: PASSWORD_MIN_LENGTH,
-  }).isLength({
-    min: PASSWORD_MIN_LENGTH,
-  }),
-  handleRequestErrors,
-];
-
-export const postAuthSignupChecks = [
-  validateRouteBody('name', 'user_name_required')
-    .not()
-    .isEmpty(),
-  validateRouteBody('email', 'email_required').isEmail(),
-  sanitizeBody('email').normalizeEmail(),
-  ...postAuthPasswordChecks,
-];
+import logger from '../../config/logger';
+import User, { encryptPassword, IUser } from '../../models/User';
+import { emailConfirmationToken } from './helpers';
 
 export const postAuthSignup: RequestHandler = async (req, res, next) => {
   try {
@@ -49,7 +26,10 @@ export const postAuthSignup: RequestHandler = async (req, res, next) => {
     user = await User.create(newUser);
     req.user = user;
 
-    await sendConfirmationToken(req, next);
+    await emailConfirmationToken(req, next, {
+      clientPath: 'confirmation',
+      type: 'verification',
+    });
 
     logger.debug(`A verification email has been sent to ${user!.email}.`);
     next();

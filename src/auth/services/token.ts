@@ -5,11 +5,11 @@ import { assertIsString } from '../../util';
 
 const EXPIRES_IN_SECONDS = 30 * 24 * 60 * 60; // 30 days * hours * minutes * seconds
 
-const JWT_SECRET = process.env.JWT_SECRET ?? 'my_secret';
+const AUTH_SECRET = process.env.AUTH_SECRET ?? 'my_secret';
 
-const signToken = (id: string): string =>
-  jwt.sign({ id }, JWT_SECRET, {
-    expiresIn: EXPIRES_IN_SECONDS,
+export const signToken = (id: string, expiresIn?: string | number): string =>
+  jwt.sign({ id }, AUTH_SECRET, {
+    expiresIn: expiresIn || EXPIRES_IN_SECONDS,
   });
 
 /**
@@ -42,7 +42,10 @@ export const sendAuthToken: RequestHandler = (req, res, next) => {
   res.json({ token });
 };
 
-export const generateConfirmationToken = async (req: Request) => {
+export const generateConfirmationToken = async (
+  req: Request,
+  expiresIn?: string,
+) => {
   const payload = {
     user: {
       id: req.user?.id,
@@ -50,9 +53,8 @@ export const generateConfirmationToken = async (req: Request) => {
   };
 
   assertIsString(process.env.CONFIRMATION_SECRET);
-  const confirmationSecret = process.env.CONFIRMATION_SECRET;
-  const token = await jwt.sign(payload, confirmationSecret!, {
-    expiresIn: '12h',
+  const token = jwt.sign(payload, process.env.CONFIRMATION_SECRET, {
+    expiresIn: expiresIn || '12h',
   });
 
   return token;
