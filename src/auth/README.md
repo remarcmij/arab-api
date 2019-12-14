@@ -4,7 +4,7 @@
 
 ### 1.1 Use Case
 
-A registered user want to sign in to the system but has forgotten his password. There is no token in `localStorage`.
+A registered user wants to sign in to the system but has forgotten his password. There is no token in `localStorage`.
 
 ### 1.2 Process
 
