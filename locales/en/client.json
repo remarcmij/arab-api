@@ -46,5 +46,7 @@
   "submit_button_label": "Submit",
   "user_side_menu_header": "User",
   "admin_side_menu_header": "Administration",
-  "info_side_menu_header": "Information"
+  "info_side_menu_header": "Information",
+  "account_side_menu_header": "User Account",
+  "select_voices": "Select voices"
 }
