@@ -22,7 +22,7 @@ export const patchAuthChangePassword = async (
 
     const validated = await validatePassword(
       currentPassword,
-      req.user?.password!,
+      req.user!.password!,
     );
 
     if (!validated) {
@@ -77,8 +77,8 @@ export const patchAuthResetPassword = async (
   try {
     const { password, resetToken } = req.body;
 
-    assertIsString(process.env.CONFIRMATION_SECRET);
-    const { id } = jwt.verify(resetToken, process.env.CONFIRMATION_SECRET) as {
+    assertIsString(process.env.RESET_SECRET);
+    const { id } = jwt.verify(resetToken, process.env.RESET_SECRET) as {
       id: string;
     };
 

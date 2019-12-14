@@ -5,10 +5,10 @@ import { assertIsString } from '../../util';
 
 const EXPIRES_IN_SECONDS = 30 * 24 * 60 * 60; // 30 days * hours * minutes * seconds
 
-const JWT_SECRET = process.env.JWT_SECRET ?? 'my_secret';
+const AUTH_SECRET = process.env.AUTH_SECRET ?? 'my_secret';
 
 export const signToken = (id: string, expiresIn?: string | number): string =>
-  jwt.sign({ id }, JWT_SECRET, {
+  jwt.sign({ id }, AUTH_SECRET, {
     expiresIn: expiresIn || EXPIRES_IN_SECONDS,
   });
 

@@ -57,10 +57,10 @@ export const emailResetToken = async (
   next: NextFunction,
   options: { clientPath: string; expiresIn?: string },
 ) => {
-  assertIsString(process.env.CONFIRMATION_SECRET);
+  assertIsString(process.env.RESET_SECRET);
   const token = jwt.sign(
     { id: req.user!.id },
-    process.env.CONFIRMATION_SECRET,
+    process.env.RESET_SECRET,
     {
       expiresIn: options.expiresIn,
     },
