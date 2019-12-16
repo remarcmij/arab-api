@@ -1,5 +1,4 @@
 import express, { Request, Response } from 'express';
-import { handleRequestErrors } from '../middleware/route-validator';
 import {
   getAuthGoogle,
   getAuthGoogleCallback,
