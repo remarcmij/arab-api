@@ -1,0 +1,13 @@
+title: Primary Title
+subtitle: Secondary Title
+restricted: false
+foreignLang: ar
+nativeLang: nl
+idiom:
+  native:
+    substitions:
+      - [(m), mannelijk]
+    ignores: []
+  foreign:
+    substitutions: []
+    ignores: []

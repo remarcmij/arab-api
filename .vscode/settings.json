@@ -12,11 +12,13 @@
     "languagedetector",
     "maxsize",
     "noreply",
+    "onvoiceschanged",
     "openid",
     "originalname",
     "printf",
     "shhh",
     "signin",
+    "signup",
     "stemword",
     "strikethrough",
     "subfolder",
@@ -25,8 +27,7 @@
     "taskqueue",
     "typesafe",
     "uuidv",
-    "wordlist",
-    "signup"
+    "wordlist"
   ],
   "cSpell.ignorePaths": [
     "**/package-lock.json",

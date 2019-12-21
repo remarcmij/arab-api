@@ -2,7 +2,7 @@
 const {
   removeParenthesizedFragments,
   extractLemmaWords,
-} = require('../dist/content/words-extractor');
+} = require('../dist/api/words-extractor');
 
 describe('removeParenthesizedFragments', () => {
   it('should remove parenthesized fragments', () => {
