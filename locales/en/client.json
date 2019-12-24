@@ -1,7 +1,7 @@
 {
   "about": "About...",
   "manage_content": "Manage content",
-  "app_title": "Study Aid Arabic",
+  "app_title": "Learning Companion",
   "change_settings": "Change Settings",
   "create_account": "Create a new account",
   "drop_here": "Drop the files here...",
@@ -48,5 +48,8 @@
   "admin_side_menu_header": "Administration",
   "info_side_menu_header": "Information",
   "account_side_menu_header": "User Account",
-  "select_voices": "Select voices"
+  "select_voices": "Select voices",
+  "settings_side_menu_header": "Settings",
+  "voice_preferences": "Voice preferences",
+  "voice_preferences_order": "Reorder voices in order of preference"
 }

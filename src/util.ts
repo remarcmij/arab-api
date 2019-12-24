@@ -7,7 +7,10 @@ declare module 'util' {
 }
 
 export class AppError extends Error {
-  name = 'AppError';
+  constructor(message: string) {
+    super(message);
+    this.name = 'AppError';
+  }
 }
 
 // JS.
@@ -49,6 +52,6 @@ export async function consoleOnDevelopment(
   }
 
   if (!isArgsArray) {
-    await (isArgsArray as unknown as Function)();
+    await ((isArgsArray as unknown) as Function)();
   }
 }

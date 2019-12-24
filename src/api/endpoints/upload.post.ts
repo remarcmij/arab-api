@@ -2,9 +2,8 @@ import { RequestHandler } from 'express';
 import path from 'path';
 import { withError } from '../ApiError';
 import {
-  addORReplaceTopic,
+  addORReplaceTopic as addOrReplaceTopic,
   validateDocumentName,
-  validateDocumentPayload,
 } from '../content';
 import { debouncedRebuildAutoCompletions } from '../db';
 
@@ -22,10 +21,8 @@ export const postUpload: RequestHandler = async (req, res, next) => {
       });
     }
 
-    validateDocumentPayload(data);
-
     const filename = path.parse(req.file.originalname).name;
-    const disposition = await addORReplaceTopic(filename, data);
+    const disposition = await addOrReplaceTopic(filename, data);
     debouncedRebuildAutoCompletions();
     res.status(200).json(disposition);
   } catch (error) {

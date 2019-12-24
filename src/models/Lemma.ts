@@ -2,7 +2,9 @@ import { Document, model, Schema } from 'mongoose';
 
 export interface ILemma {
   native: string;
+  nativeLang: string;
   foreign: string;
+  foreignLang: string;
   roman?: string;
   filename: string;
   sectionIndex: number;
@@ -11,7 +13,9 @@ export interface ILemma {
 
 const lemmaSchema = new Schema<ILemma>({
   native: { type: String, required: true },
+  nativeLang: { type: String, required: true },
   foreign: { type: String, required: true },
+  foreignLang: { type: String, required: true },
   roman: { type: String, required: false },
   filename: { type: String, required: true },
   sectionIndex: { type: Number, required: true },

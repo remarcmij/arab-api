@@ -1,22 +1,7 @@
 import crypto from 'crypto';
-import fm from 'front-matter';
-import logger from '../config/logger';
-import { ILemma } from '../models/Lemma';
-import { ITopic } from '../models/Topic';
-import * as db from './db';
-import { parseBody } from './parser';
 import { AppError } from '../util';
-
-type TopicDisposition = {
-  disposition: 'success' | 'unchanged';
-};
-
-interface IAttributes {
-  title: string;
-  subtitle?: string;
-  restricted: boolean;
-  index?: boolean;
-}
+import * as db from './db';
+import { parseDocument } from './parser';
 
 function computeSha(data: string) {
   const shaSum = crypto.createHash('sha1');
@@ -24,63 +9,19 @@ function computeSha(data: string) {
   return shaSum.digest('hex');
 }
 
-export function validateDocumentPayload<T extends { index?: boolean }>(
-  data: string,
-) {
-  const fmResult = fm<T>(data);
-
-  const hasAttributes = !!Object.keys(fmResult.attributes).length;
-  if (!hasAttributes) {
-    throw new AppError('invalid empty markdown head file.');
-  }
-
-  const parserResult = parseBody(fmResult.body);
-
-  return { fmResult, parserResult };
-}
-
 export async function addORReplaceTopic(
   filename: string,
-  newContent: string,
-): Promise<TopicDisposition> {
-  const [publication, article] = filename.split('.');
-  const computedSha = computeSha(newContent);
-
-  const { fmResult, parserResult } = validateDocumentPayload<IAttributes>(
-    newContent,
-  );
-
-  const statusCode = 200;
-
+  content: string,
+): Promise<{ disposition: 'unchanged' | 'success' }> {
+  const computedSha = computeSha(content);
   const storedSha = await db.getTopicSha(filename);
-  if (storedSha == null) {
-    statusCode;
-  }
   if (computedSha === storedSha) {
-    logger.info(`unchanged: ${filename}`);
     return { disposition: 'unchanged' };
   }
 
-  const topic: ITopic = {
-    ...fmResult.attributes,
-    article,
-    filename,
-    publication,
-    sections: [],
-    sha: computedSha,
-  };
-
-  let lemmas: ILemma[];
-  if (article === 'index') {
-    lemmas = [];
-  } else {
-    topic.sections = parserResult.sections;
-    lemmas = parserResult.lemmas;
-  }
-
+  const result = await parseDocument(filename, content, computedSha);
   await db.deleteTopic(filename);
-  await db.insertTopic(topic, lemmas);
-
+  await db.insertTopic(result.topic, result.lemmas);
   return { disposition: 'success' };
 }
 
