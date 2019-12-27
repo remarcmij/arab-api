@@ -27,7 +27,8 @@
     "taskqueue",
     "typesafe",
     "uuidv",
-    "wordlist"
+    "wordlist",
+    "gmail"
   ],
   "cSpell.ignorePaths": [
     "**/package-lock.json",
@@ -36,7 +37,7 @@
     "**/.git/**",
     ".vscode",
     "typings",
-    "*.md"
+    "content/*.md"
   ],
   "eslint.validate": [
     "javascript",
