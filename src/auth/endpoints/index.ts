@@ -7,4 +7,3 @@ export * from './password.post';
 export * from './root.get';
 export * from './signup.post';
 export * from './token.get';
-export * from './validationChecks';

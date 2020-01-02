@@ -47,24 +47,19 @@ export const postAuthSignup = async (
   }
 };
 
-const nameChecks = body('name', i18next.t('user_name_required'))
-  .not()
-  .isEmpty();
-
-const emailChecks = body('email', i18next.t('email_required')).isEmail();
-
-const passwordChecks = body(
-  'password',
-  i18next.t('password_min_length', {
-    minLength: PASSWORD_MIN_LENGTH,
-  }),
-).isLength({
-  min: PASSWORD_MIN_LENGTH,
-});
-
 postAuthSignup.handlers = [
-  nameChecks,
-  emailChecks,
-  passwordChecks,
+  body('name', i18next.t('user_name_required'))
+    .not()
+    .isEmpty(),
+  body('email', i18next.t('email_required')).isEmail(),
+  body(
+    'password',
+    i18next.t('password_min_length', {
+      minLength: PASSWORD_MIN_LENGTH,
+    }),
+  ).isLength({
+    min: PASSWORD_MIN_LENGTH,
+  }),
   handleRequestErrors,
+  postAuthSignup,
 ];
