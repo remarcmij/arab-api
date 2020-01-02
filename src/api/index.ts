@@ -1,25 +1,17 @@
 import express, { Request, Response } from 'express';
 import multer from 'multer';
-import {
-  isAdmin,
-  isAuthenticated,
-  maybeAuthenticated,
-} from '../auth/services';
 import '../auth/local/passport-setup';
+import { isAdmin, isAuthenticated, maybeAuthenticated } from '../auth/services';
 import {
-  checkRequiredFields,
-  handleRequestErrors,
-} from '../middleware/route-validator';
-import {
-  getRoot,
-  getAll,
-  postUpload,
   deleteTopic,
-  getProfile,
-  getIndex,
+  getAll,
   getArticle,
-  getSearch,
+  getIndex,
   getLookup,
+  getProfile,
+  getRoot,
+  getSearch,
+  postUpload,
 } from './endpoints';
 
 const apiRouter = express.Router();
@@ -30,12 +22,33 @@ const uploadSingleFile = multer().single('file');
  * description: Returns a list of publications topics
  */
 apiRouter.get('/', maybeAuthenticated, getRoot);
-apiRouter.get('/all', getAll);
 
+/*
+ * @oas [get] /all
+ * description: if (admin) Returns a list of all topics.
+ */
+apiRouter.get('/all', isAdmin, getAll);
+
+/*
+ * @oas [post] /upload
+ * description: if (admin) allows admins to upload new content as files, Returns a status object: { disposition: 'success' | 'unchanged' }
+ * parameters:
+ *   - (body) file {FormData} client object.
+ */
 apiRouter.post('/upload', isAdmin, uploadSingleFile, postUpload);
 
+/*
+ * @oas [delete] /topic/{filename}
+ * description: if (admin) allows admins to delete certain content, Returns Returns a list of all topics.
+ * parameters:
+ *   - (path) filename {string} as the content ID.
+ */
 apiRouter.delete('/topic/:filename', isAdmin, deleteTopic, getAll);
 
+/*
+ * @oas [get] /profile
+ * description: if (user) allows a user to preview their own profile details.
+ */
 apiRouter.get('/profile', isAuthenticated, getProfile);
 
 /* @oas [get] /api/index/{publication}
@@ -43,41 +56,28 @@ apiRouter.get('/profile', isAuthenticated, getProfile);
  * parameters:
  *   - (path) publication {string} The publication name
  */
-apiRouter.get(
-  '/index/:publication',
-  maybeAuthenticated,
-  checkRequiredFields('publication', 'publication is required'),
-  handleRequestErrors,
-  getIndex,
-);
+apiRouter.get('/index/:publication', maybeAuthenticated, getIndex.handlers);
 
 /* @oas [get] /api/article/{filename}
  * description: Returns an article topic
  * parameters:
  *   - (path) filename {string} The article filename
  */
-apiRouter.get(
-  '/article/:filename',
-  maybeAuthenticated,
-  checkRequiredFields('filename', 'filename is required'),
-  handleRequestErrors,
-  getArticle,
-);
+apiRouter.get('/article/:filename', maybeAuthenticated, getArticle.handlers);
 
-apiRouter.get(
-  '/search',
-  maybeAuthenticated,
-  checkRequiredFields('term', 'term is required'),
-  handleRequestErrors,
-  getSearch,
-);
+/* @oas [get] /search
+ * description: Returns a search result out of a `term` the user required, appropriate for the user's restriction.
+ * parameters:
+ *   - (body) term {string} to look up into the database.
+ */
+apiRouter.get('/search', maybeAuthenticated, getSearch.handlers);
 
-apiRouter.get(
-  '/lookup',
-  checkRequiredFields('term', 'term is required'),
-  handleRequestErrors,
-  getLookup,
-);
+/* @oas [get] /lookup
+ * description: Returns a list of suggestion words to look into.
+ * parameters:
+ *   - (body) term {string} to look up into the database.
+ */
+apiRouter.get('/lookup', getLookup.handlers);
 
 // Error Handling!
 apiRouter.use('*', (req: Request, res: Response) => res.sendStatus(404));
