@@ -3,7 +3,7 @@ import { body } from 'express-validator';
 import i18n from 'i18next';
 import jwt from 'jsonwebtoken';
 import { withError } from '../../api/ApiError';
-import User, { encryptPassword, validatePassword } from '../../models/User';
+import User, { encryptPassword, validatePassword, IUser } from '../../models/User';
 import { assertIsString } from '../../util';
 import { handleRequestErrors } from '../../middleware/route-validator';
 
@@ -40,12 +40,8 @@ export const patchAuthChangePassword = async (
       });
     }
 
-    const hashedPassword = await encryptPassword(password);
-
-    await User.updateOne(
-      { email: req.user!.email },
-      { password: hashedPassword, verified: req.user!.verified },
-    );
+    user!.password = await encryptPassword(password);
+    await user!.save();
 
     next();
   } catch (error) {
@@ -84,19 +80,11 @@ export const patchAuthResetPassword = async (
 
     const user = await User.findById(id);
 
-    if (!user) {
-      return nextWithError({
-        status: 500,
-        i18nKey: 'server_error',
-        logMsg: 'password reset: user not found',
-      });
-    }
+    user!.password = await encryptPassword(password);
+    user!.verified = true;
+    await user!.save();
 
-    user.password = await encryptPassword(password);
-    user.verified = true;
-    await user.save();
-
-    req.user = user;
+    req.user = user as unknown as IUser;
 
     next();
   } catch (error) {
