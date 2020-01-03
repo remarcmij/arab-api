@@ -9,7 +9,7 @@ import User, {
   IUser,
   validatePassword,
 } from '../../models/User';
-import { assertIsString } from '../../util';
+import { assertIsString, AppError } from '../../util';
 import { emailForUserAuthorization } from './helpers';
 
 const PASSWORD_MIN_LENGTH = 8;
@@ -24,6 +24,9 @@ export const patchAuthChangePassword = async (
     const { password, currentPassword } = req.body;
 
     const user = await User.findOne({ email: req.user!.email });
+    if (!user) {
+      throw new AppError(`user ${req.user!.email} not found`);
+    }
 
     const validated = await validatePassword(
       currentPassword,
@@ -45,8 +48,8 @@ export const patchAuthChangePassword = async (
       });
     }
 
-    user!.password = await encryptPassword(password);
-    await user!.save();
+    user.password = await encryptPassword(password);
+    await user.save();
 
     next();
   } catch (error) {

@@ -1,13 +1,17 @@
-import { NextFunction, Request } from 'express';
+import { Request } from 'express';
 import jwt from 'jsonwebtoken';
-import { withError } from '../../api/ApiError';
-import { assertIsString, consoleOnDevelopment } from '../../util';
+import { assertIsString } from '../../util';
 import {
   generateConfirmationToken,
   MailOptionTypes,
   sendTemplateMail,
 } from '../services';
 import emailTemplate from '../templates/confirmation';
+
+const inDevelopmentMode = () => {
+  assertIsString(process.env.NODE_ENV);
+  return process.env.NODE_ENV === 'development';
+};
 
 // helpers.
 const generateClientLink = (link: string, host = '') => {
@@ -19,41 +23,30 @@ const generateClientLink = (link: string, host = '') => {
 // Confirmation token helper:
 export const emailConfirmationToken = async (
   req: Request,
-  next: NextFunction,
   options: { type: MailOptionTypes; clientPath: string; expiresIn?: string },
 ) => {
   const token = await generateConfirmationToken(req, options.expiresIn);
-
-  // Check if not token
-  if (!token) {
-    return withError(next)({
-      status: 401,
-      i18nKey: 'empty_login_token',
-      logMsg: `No token registered while (${req.user?.email}) ${options.type} request.`,
-    });
-  }
 
   const link = generateClientLink(
     `/${options.clientPath}/${token}`,
     req.headers.host,
   );
 
-  await consoleOnDevelopment(
-    () => link,
-    async () =>
-      await sendTemplateMail({
-        email: req.user?.email as string,
-        emailTemplate,
-        name: req.user?.name as string,
-        type: options.type,
-        mainButtonLink: link,
-      }),
-  );
+  if (inDevelopmentMode()) {
+    return console.log(link);
+  }
+
+  await sendTemplateMail({
+    email: req.user?.email as string,
+    emailTemplate,
+    name: req.user?.name as string,
+    type: options.type,
+    mainButtonLink: link,
+  });
 };
 
 export const emailResetToken = async (
   req: Request,
-  next: NextFunction,
   options: { clientPath: string; expiresIn?: string },
 ) => {
   assertIsString(process.env.RESET_SECRET);
@@ -61,31 +54,22 @@ export const emailResetToken = async (
     expiresIn: options.expiresIn,
   });
 
-  // Check if not token
-  if (!token) {
-    return withError(next)({
-      status: 401,
-      i18nKey: 'empty_login_token',
-      logMsg: `No token registered while (${req.user?.email}) password reset request.`,
-    });
-  }
-
   const link = generateClientLink(
     `/${options.clientPath}/${token}`,
     req.headers.host,
   );
 
-  await consoleOnDevelopment(
-    () => link,
-    async () =>
-      await sendTemplateMail({
-        email: req.user?.email as string,
-        emailTemplate,
-        name: req.user?.name as string,
-        type: 'password_reset',
-        mainButtonLink: link,
-      }),
-  );
+  if (inDevelopmentMode()) {
+    return console.log(link);
+  }
+
+  await sendTemplateMail({
+    email: req.user!.email,
+    emailTemplate,
+    name: req.user?.name as string,
+    type: 'password_reset',
+    mainButtonLink: link,
+  });
 };
 
 export const emailForUserAuthorization = async (
@@ -93,17 +77,17 @@ export const emailForUserAuthorization = async (
   options: { clientPath: string; name: string },
 ) => {
   const link = generateClientLink(`/${options.clientPath}`, req.headers.host);
-  assertIsString(process.env.ADMIN_EMAIL);
 
-  await consoleOnDevelopment(
-    () => link,
-    async () =>
-      await sendTemplateMail({
-        email: process.env.ADMIN_EMAIL!,
-        emailTemplate,
-        name: options.name,
-        type: 'user_verified',
-        mainButtonLink: link,
-      }),
-  );
+  if (inDevelopmentMode()) {
+    return console.log(link);
+  }
+
+  assertIsString(process.env.ADMIN_EMAIL);
+  await sendTemplateMail({
+    email: process.env.ADMIN_EMAIL!,
+    emailTemplate,
+    name: options.name,
+    type: 'user_verified',
+    mainButtonLink: link,
+  });
 };

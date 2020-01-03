@@ -34,40 +34,35 @@ function verify(req: Request) {
           0: { value: email },
         },
       } = profile;
-      const photo = profile.photos?.[0].value ?? '';
+
       let user = await User.findOne({ email });
       if (!user) {
         const userInfo: IUser = {
           email,
           name: displayName,
-          photo,
-          verified: true,
+          verified: false,
         };
-        user = await new User(userInfo).save();
+        user = await new User(userInfo);
         logger.info(`new Google user signed in: ${user.email}`);
+      }
 
+      if (!user.verified) {
         await emailForUserAuthorization(req, {
           clientPath: `/admin/users/authorization?email=${user.email}`,
           name: user.name,
         });
-      } else {
-        // Update user document with most recent profile data.
-        user.photo = photo;
-        user.name = displayName;
-
-        if (!user.verified) {
-          // If signed in with Google, the email address is verified by implication
-          user.verified = true;
-          await user.save();
-
-          await emailForUserAuthorization(req, {
-            clientPath: `/admin/users/authorization?email=${user.email}`,
-            name: user.name,
-          });
-        }
-
-        logger.debug(`existing Google user signed in: ${user.email}`);
       }
+
+      // If signed in with Google, the email address is verified by implication
+      user.verified = true;
+
+      // Update user document with most recent profile data.
+      user.photo = profile.photos?.[0].value ?? '';
+      user.name = displayName;
+      await user.save();
+
+      logger.debug(`existing Google user signed in: ${user.email}`);
+
       done(null, user);
     } catch (error) {
       withError(done)({

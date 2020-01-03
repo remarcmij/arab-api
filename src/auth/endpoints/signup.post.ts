@@ -35,7 +35,7 @@ export const postAuthSignup = async (
     user = await User.create(newUser);
     req.user = user;
 
-    await emailConfirmationToken(req, next, {
+    await emailConfirmationToken(req, {
       clientPath: 'confirmation',
       type: 'verification',
     });

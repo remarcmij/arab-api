@@ -26,7 +26,7 @@ export const postAuthPassword = async (
 
     req.user = user;
 
-    await emailResetToken(req, next, {
+    await emailResetToken(req, {
       clientPath: 'password',
       expiresIn: '10m',
     });
@@ -44,5 +44,5 @@ postAuthPassword.handlers = [
   body('email', i18next.t('email_required')).isEmail(),
   sanitizeBody('email').normalizeEmail(),
   handleRequestErrors,
-  postAuthPassword
+  postAuthPassword,
 ];

@@ -37,7 +37,7 @@ export const getAuthToken: RequestHandler = async (req, res, next) => {
       });
     }
 
-    await emailConfirmationToken(req, next, {
+    await emailConfirmationToken(req, {
       clientPath: 'confirmation',
       type: 'verification',
     });
