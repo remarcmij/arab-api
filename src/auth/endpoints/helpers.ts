@@ -51,20 +51,15 @@ export const emailConfirmationToken = async (
   );
 };
 
-// Custom login token helper:
 export const emailResetToken = async (
   req: Request,
   next: NextFunction,
   options: { clientPath: string; expiresIn?: string },
 ) => {
   assertIsString(process.env.RESET_SECRET);
-  const token = jwt.sign(
-    { id: req.user!.id },
-    process.env.RESET_SECRET,
-    {
-      expiresIn: options.expiresIn,
-    },
-  );
+  const token = jwt.sign({ id: req.user!.id }, process.env.RESET_SECRET, {
+    expiresIn: options.expiresIn,
+  });
 
   // Check if not token
   if (!token) {
@@ -87,7 +82,27 @@ export const emailResetToken = async (
         email: req.user?.email as string,
         emailTemplate,
         name: req.user?.name as string,
-        type: 'password-reset',
+        type: 'password_reset',
+        mainButtonLink: link,
+      }),
+  );
+};
+
+export const emailForUserAuthorization = async (
+  req: Request,
+  options: { clientPath: string; name: string },
+) => {
+  const link = generateClientLink(`/${options.clientPath}`, req.headers.host);
+  assertIsString(process.env.ADMIN_EMAIL);
+
+  await consoleOnDevelopment(
+    () => link,
+    async () =>
+      await sendTemplateMail({
+        email: process.env.ADMIN_EMAIL!,
+        emailTemplate,
+        name: options.name,
+        type: 'user_verified',
         mainButtonLink: link,
       }),
   );

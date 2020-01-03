@@ -3,9 +3,14 @@ import { body } from 'express-validator';
 import i18n from 'i18next';
 import jwt from 'jsonwebtoken';
 import { withError } from '../../api/ApiError';
-import User, { encryptPassword, validatePassword, IUser } from '../../models/User';
-import { assertIsString } from '../../util';
 import { handleRequestErrors } from '../../middleware/route-validator';
+import User, {
+  encryptPassword,
+  IUser,
+  validatePassword,
+} from '../../models/User';
+import { assertIsString } from '../../util';
+import { emailForUserAuthorization } from './helpers';
 
 const PASSWORD_MIN_LENGTH = 8;
 
@@ -84,7 +89,12 @@ export const patchAuthResetPassword = async (
     user!.verified = true;
     await user!.save();
 
-    req.user = user as unknown as IUser;
+    emailForUserAuthorization(req, {
+      clientPath: `/admin/users/authorization?email=${user!.email}`,
+      name: user!.name,
+    });
+
+    req.user = (user as unknown) as IUser;
 
     next();
   } catch (error) {

@@ -1,8 +1,9 @@
 import { RequestHandler } from 'express';
 import jwt from 'jsonwebtoken';
+import { withError } from '../../api/ApiError';
 import User from '../../models/User';
 import { assertIsString } from '../../util';
-import { withError } from '../../api/ApiError';
+import { emailForUserAuthorization } from './helpers';
 
 export const postAuthConfirmation: RequestHandler = async (req, res, next) => {
   const { token } = req.body;
@@ -32,9 +33,16 @@ export const postAuthConfirmation: RequestHandler = async (req, res, next) => {
       });
     }
 
-    res.status(200).json({ message: req.t('account_verified') });
     user.verified = true;
     await user.save();
+
+    emailForUserAuthorization(req, {
+      clientPath: `/admin/users/authorization?email=${user.email}`,
+      name: user.name,
+    });
+
+    res.status(200).json({ message: req.t('account_verified') });
+
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
       return nextWithError({

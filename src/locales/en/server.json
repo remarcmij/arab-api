@@ -10,7 +10,7 @@
       "closing": "Kind Regards,<br>Team Study Aid Arabic"
     }
   },
-  "password-reset_email": {
+  "password_reset_email": {
     "subject": "Password reset",
     "body": {
       "title": "password reset request",
@@ -21,8 +21,21 @@
       "closing": "Kind Regards,<br>Team Study Aid Arabic"
     }
   },
+  "user_verified_email": {
+    "subject": "New User Verified",
+    "body": {
+      "title": "A new user has been verified",
+      "greeting": "Hello there",
+      "opening": "The user {{name}} has registered and verified his e-mail account",
+      "prompt": "Please authorize his access by clicking:",
+      "buttonText": "Here",
+      "closing": "Kind Regards,<br>Team Study Aid Arabic"
+    }
+  },
+  "missing_required_field": "Missing required field",
   "account_verified": "Your account has been verified.",
   "already_verified": "This user has already been verified.",
+  "already_authorized": "This user has already been authorized.",
   "email_already_registered": "This email address is already registered.",
   "email_required": "An email address is required",
   "invalid_credentials": "Email address or password is invalid.",

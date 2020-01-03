@@ -12,10 +12,12 @@ import {
   postAuthPassword,
   postAuthSignup,
 } from './endpoints';
-import './google/passport-setup';
+import googlePassportSetup from './google/passport-setup';
 import { isAuthenticated, sendAuthToken, setTokenCookie } from './services';
 
 const router = express.Router();
+
+router.use(googlePassportSetup);
 
 router
   .get('/google/callback', getAuthGoogleCallback, setTokenCookie)
