@@ -40,21 +40,19 @@ function verify(req: Request) {
         const userInfo: IUser = {
           email,
           name: displayName,
-          verified: false,
+          // If signed in with Google, the email address is verified by implication
+          verified: true,
         };
-        user = await new User(userInfo);
+        user = new User(userInfo);
         logger.info(`new Google user signed in: ${user.email}`);
       }
 
-      if (!user.verified) {
+      if (!user.authorized) {
         await emailForUserAuthorization(req, {
           clientPath: `/admin/users/authorization?email=${user.email}`,
           name: user.name,
         });
       }
-
-      // If signed in with Google, the email address is verified by implication
-      user.verified = true;
 
       // Update user document with most recent profile data.
       user.photo = profile.photos?.[0].value ?? '';
