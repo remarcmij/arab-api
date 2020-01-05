@@ -5,6 +5,7 @@ import { isAdmin, isAuthenticated, maybeAuthenticated } from '../auth/services';
 import {
   deleteTopic,
   getAll,
+  getAllUsers,
   getArticle,
   getIndex,
   getLookup,
@@ -12,6 +13,7 @@ import {
   getRoot,
   getSearch,
   postUpload,
+  postUserAuthorize,
 } from './endpoints';
 
 const apiRouter = express.Router();
@@ -78,6 +80,18 @@ apiRouter.get('/search', maybeAuthenticated, getSearch.handlers);
  *   - (body) term {string} to look up into the database.
  */
 apiRouter.get('/lookup', getLookup.handlers);
+
+/* @oas [patch] /user/authorize
+ * description: if (admin) allows admins to authorize users for restricted content, Returns the requested user Object.
+ * parameters:
+ *   - (body) {email: string; authorize: boolean} as an `id` to update.
+ */
+apiRouter.patch('/user/authorize', isAdmin, postUserAuthorize.handlers);
+
+/* @oas [get] /users/all
+ * description: if (admin) allow admins to list all users or match dates flexibility along with regex.
+ */
+apiRouter.get('/users/all', isAdmin, getAllUsers);
 
 // Error Handling!
 apiRouter.use('*', (req: Request, res: Response) => res.sendStatus(404));
