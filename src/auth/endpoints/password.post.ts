@@ -42,7 +42,6 @@ export const postAuthPassword = async (
 
 postAuthPassword.handlers = [
   body('email', i18next.t('email_required')).isEmail(),
-  sanitizeBody('email').normalizeEmail(),
   handleRequestErrors,
   postAuthPassword,
 ];

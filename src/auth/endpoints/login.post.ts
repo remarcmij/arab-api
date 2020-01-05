@@ -28,7 +28,6 @@ export const postAuthLogin = (
 
 postAuthLogin.handlers = [
   body('email', i18next.t('email_required')).isEmail(),
-  sanitizeBody('email').normalizeEmail(),
   body('password', i18next.t('password_required'))
     .not()
     .isEmpty(),
