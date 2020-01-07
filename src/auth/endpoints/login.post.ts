@@ -1,9 +1,9 @@
 import { NextFunction, Request, Response } from 'express';
-import { body, sanitizeBody } from 'express-validator';
+import { body } from 'express-validator';
+import i18next from 'i18next';
 import passport from 'passport';
 import { withError } from '../../api/ApiError';
 import { handleRequestErrors } from '../../middleware/route-validator';
-import i18next from 'i18next';
 
 export const postAuthLogin = (
   req: Request,
