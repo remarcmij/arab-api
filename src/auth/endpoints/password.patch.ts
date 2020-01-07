@@ -93,7 +93,7 @@ export const patchAuthResetPassword = async (
     await user!.save();
 
     emailForUserAuthorization(req, {
-      clientPath: `/admin/users/authorization?email=${user!.email}`,
+      clientPath: `/admin/users/options`,
       name: user!.name,
     });
 

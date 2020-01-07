@@ -49,7 +49,7 @@ function verify(req: Request) {
 
       if (!user.authorized) {
         await emailForUserAuthorization(req, {
-          clientPath: `/admin/users/authorization?email=${user.email}`,
+          clientPath: `/admin/users/options`,
           name: user.name,
         });
       }
