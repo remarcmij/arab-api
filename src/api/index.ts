@@ -4,6 +4,7 @@ import '../auth/local/passport-setup';
 import { isAdmin, isAuthenticated, maybeAuthenticated } from '../auth/services';
 import {
   deleteTopic,
+  deleteUser,
   getAll,
   getAllUsers,
   getArticle,
@@ -88,8 +89,15 @@ apiRouter.get('/lookup', getLookup.handlers);
  */
 apiRouter.patch('/user/authorize', isAdmin, postUserAuthorize.handlers);
 
+/* @oas [delete] /user
+ * description: if (admin) allow admins to remove user specified with his email address.
+ * parameters:
+ *   - (body) {email: string} as an `id` to remove.
+ */
+apiRouter.delete('/user', isAdmin, deleteUser.handlers);
+
 /* @oas [get] /users/all
- * description: if (admin) allow admins to list all users or match dates flexibility along with regex.
+ * description: if (admin) allow admins to list all users.
  */
 apiRouter.get('/users/all', isAdmin, getAllUsers);
 
