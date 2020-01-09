@@ -14,7 +14,7 @@ import {
   getRoot,
   getSearch,
   postUpload,
-  postUserAuthorize,
+  patchUserAuthorize,
 } from './endpoints';
 
 const apiRouter = express.Router();
@@ -87,7 +87,7 @@ apiRouter.get('/lookup', getLookup.handlers);
  * parameters:
  *   - (body) {email: string; authorize: boolean} as an `id` to update.
  */
-apiRouter.patch('/user/authorize', isAdmin, postUserAuthorize.handlers);
+apiRouter.patch('/user/authorize', isAdmin, patchUserAuthorize.handlers);
 
 /* @oas [delete] /user
  * description: if (admin) allow admins to remove user specified with his email address.
