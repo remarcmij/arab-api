@@ -30,15 +30,13 @@
   "search_placeholder": "Search...",
   "search_tooltip": "Search",
   "show_transcription": "Show transcription",
-  "show_vocalization": "Show vocalization",
+  "show_arabic_vocalization": "Show Arabic vocalization",
   "transcription_system": "Transcription",
   "unknown_error": "An unknown error occurred.",
   "upload_content": "Upload content",
   "upload_results": "Upload results",
   "validation_errors": "The server received invalid input.",
   "voice_name": "Voice",
-  "ar": "Arabic",
-  "nl": "Dutch",
   "change_password": "Change password",
   "reset_password": "Reset password",
   "current_password_label": "Current password",
@@ -51,5 +49,8 @@
   "select_voices": "Select voices",
   "settings_side_menu_header": "Settings",
   "voice_preferences": "Voice preferences",
-  "voice_preferences_order": "Reorder voices in order of preference"
+  "voice_preferences_order": "Reorder voices in order of preference",
+  "ar": "Arabic",
+  "id": "Indonesian",
+  "nl": "Dutch"
 }
