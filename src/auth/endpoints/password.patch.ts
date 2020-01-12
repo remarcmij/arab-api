@@ -3,9 +3,14 @@ import { body } from 'express-validator';
 import i18n from 'i18next';
 import jwt from 'jsonwebtoken';
 import { withError } from '../../api/ApiError';
-import User, { encryptPassword, validatePassword } from '../../models/User';
-import { assertIsString } from '../../util';
 import { handleRequestErrors } from '../../middleware/route-validator';
+import User, {
+  encryptPassword,
+  IUser,
+  validatePassword,
+} from '../../models/User';
+import { assertIsString, AppError } from '../../util';
+import { emailForUserAuthorization } from './helpers';
 
 const PASSWORD_MIN_LENGTH = 8;
 
@@ -19,6 +24,9 @@ export const patchAuthChangePassword = async (
     const { password, currentPassword } = req.body;
 
     const user = await User.findOne({ email: req.user!.email });
+    if (!user) {
+      throw new AppError(`user ${req.user!.email} not found`);
+    }
 
     const validated = await validatePassword(
       currentPassword,
@@ -40,12 +48,8 @@ export const patchAuthChangePassword = async (
       });
     }
 
-    const hashedPassword = await encryptPassword(password);
-
-    await User.updateOne(
-      { email: req.user!.email },
-      { password: hashedPassword, verified: req.user!.verified },
-    );
+    user.password = await encryptPassword(password);
+    await user.save();
 
     next();
   } catch (error) {
@@ -84,19 +88,16 @@ export const patchAuthResetPassword = async (
 
     const user = await User.findById(id);
 
-    if (!user) {
-      return nextWithError({
-        status: 500,
-        i18nKey: 'server_error',
-        logMsg: 'password reset: user not found',
-      });
-    }
+    user!.password = await encryptPassword(password);
+    user!.verified = true;
+    await user!.save();
 
-    user.password = await encryptPassword(password);
-    user.verified = true;
-    await user.save();
+    emailForUserAuthorization(req, {
+      clientPath: `/admin/users/options`,
+      name: user!.name,
+    });
 
-    req.user = user;
+    req.user = (user as unknown) as IUser;
 
     next();
   } catch (error) {

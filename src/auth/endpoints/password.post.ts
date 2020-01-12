@@ -1,9 +1,16 @@
-import { RequestHandler } from 'express';
-import { emailResetToken } from './helpers';
+import { NextFunction, Request, Response } from 'express';
+import { body } from 'express-validator';
+import i18next from 'i18next';
 import { withError } from '../../api/ApiError';
+import { handleRequestErrors } from '../../middleware/route-validator';
 import User from '../../models/User';
+import { emailResetToken } from './helpers';
 
-export const postAuthPassword: RequestHandler = async (req, res, next) => {
+export const postAuthPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   const nextWithError = withError(next);
   try {
     const { email } = req.body;
@@ -19,7 +26,7 @@ export const postAuthPassword: RequestHandler = async (req, res, next) => {
 
     req.user = user;
 
-    await emailResetToken(req, next, {
+    await emailResetToken(req, {
       clientPath: 'password',
       expiresIn: '10m',
     });
@@ -32,3 +39,9 @@ export const postAuthPassword: RequestHandler = async (req, res, next) => {
     });
   }
 };
+
+postAuthPassword.handlers = [
+  body('email', i18next.t('email_required')).isEmail(),
+  handleRequestErrors,
+  postAuthPassword,
+];

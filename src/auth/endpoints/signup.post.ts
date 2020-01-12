@@ -1,10 +1,19 @@
-import { RequestHandler } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { withError } from '../../api/ApiError';
 import logger from '../../config/logger';
 import User, { encryptPassword, IUser } from '../../models/User';
 import { emailConfirmationToken } from './helpers';
+import { body } from 'express-validator';
+import i18next from 'i18next';
+import { handleRequestErrors } from '../../middleware/route-validator';
 
-export const postAuthSignup: RequestHandler = async (req, res, next) => {
+const PASSWORD_MIN_LENGTH = 8;
+
+export const postAuthSignup = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const { name, email, password } = req.body;
     let user = await User.findOne({ email });
@@ -26,7 +35,7 @@ export const postAuthSignup: RequestHandler = async (req, res, next) => {
     user = await User.create(newUser);
     req.user = user;
 
-    await emailConfirmationToken(req, next, {
+    await emailConfirmationToken(req, {
       clientPath: 'confirmation',
       type: 'verification',
     });
@@ -37,3 +46,20 @@ export const postAuthSignup: RequestHandler = async (req, res, next) => {
     logger.error(err.message);
   }
 };
+
+postAuthSignup.handlers = [
+  body('name', i18next.t('user_name_required'))
+    .not()
+    .isEmpty(),
+  body('email', i18next.t('email_required')).isEmail(),
+  body(
+    'password',
+    i18next.t('password_min_length', {
+      minLength: PASSWORD_MIN_LENGTH,
+    }),
+  ).isLength({
+    min: PASSWORD_MIN_LENGTH,
+  }),
+  handleRequestErrors,
+  postAuthSignup,
+];

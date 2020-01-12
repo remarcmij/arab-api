@@ -1,9 +1,17 @@
-import { RequestHandler } from 'express';
-import { withError } from '../ApiError';
+import { NextFunction, Request, Response } from 'express';
+import {
+  checkRequiredFields,
+  handleRequestErrors,
+} from '../../middleware/route-validator';
 import { isAuthorized } from '../../models/User';
+import { withError } from '../ApiError';
 import * as db from '../db';
 
-export const getArticle: RequestHandler = async (req, res, next) => {
+export const getArticle = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   const nextWithError = withError(next);
   try {
     const user = req.user?.email ?? 'anonymous';
@@ -28,3 +36,9 @@ export const getArticle: RequestHandler = async (req, res, next) => {
     nextWithError({ error, status: 500 });
   }
 };
+
+getArticle.handlers = [
+  checkRequiredFields('filename', 'filename is required'),
+  handleRequestErrors,
+  getArticle,
+];

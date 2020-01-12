@@ -8,28 +8,31 @@ import {
   patchAuthChangePassword,
   patchAuthResetPassword,
   postAuthConfirmation,
-  postAuthEmailChecks,
   postAuthLogin,
-  postAuthLoginChecks,
   postAuthPassword,
   postAuthSignup,
-  postAuthSignupChecks,
 } from './endpoints';
-import './google/passport-setup';
+import googlePassportSetup from './google/passport-setup';
 import { isAuthenticated, sendAuthToken, setTokenCookie } from './services';
 
 const router = express.Router();
+
+router.use(googlePassportSetup);
 
 router
   .get('/google/callback', getAuthGoogleCallback, setTokenCookie)
   .get('/google', getAuthGoogle);
 
-router.post('/login', postAuthLoginChecks, postAuthLogin, sendAuthToken);
+router.post('/login', postAuthLogin.handlers, sendAuthToken);
 
-router.post('/signup', postAuthSignupChecks, postAuthSignup, sendAuthToken);
+router.post('/signup', postAuthSignup.handlers, sendAuthToken);
 
 router.post('/confirmation', postAuthConfirmation);
 
+// Do we need this?
+//  - we have a password change
+//  - we have a password reset
+// ? else
 router.get('/password', isAuthenticated, getAuthResetPassRequest);
 
 router.patch(
@@ -41,7 +44,7 @@ router.patch(
 
 router.patch('/password/reset', patchAuthResetPassword.handlers, sendAuthToken);
 
-router.post('/password', postAuthEmailChecks, postAuthPassword);
+router.post('/password', postAuthPassword.handlers);
 
 router.get('/token/:tokenString', isAuthenticated, getAuthToken);
 

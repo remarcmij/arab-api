@@ -1,9 +1,17 @@
-import * as db from '../db';
-import { RequestHandler } from 'express';
+import { NextFunction, Request, Response } from 'express';
+import {
+  checkRequiredFields,
+  handleRequestErrors,
+} from '../../middleware/route-validator';
 import { isAuthorized } from '../../models/User';
 import { withError } from '../ApiError';
+import * as db from '../db';
 
-export const getIndex: RequestHandler = async (req, res, next) => {
+export const getIndex = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const topics = await db.getArticleTopics(req.params.publication);
     const userRelatedTopics = topics.filter(
@@ -14,3 +22,9 @@ export const getIndex: RequestHandler = async (req, res, next) => {
     withError(next)({ error, status: 500 });
   }
 };
+
+getIndex.handlers = [
+  checkRequiredFields('publication', 'publication is required'),
+  handleRequestErrors,
+  getIndex,
+];

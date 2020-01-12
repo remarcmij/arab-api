@@ -35,9 +35,7 @@ export const getAuthResetPassRequest: RequestHandler = async (
       });
     }
 
-    await emailResetToken(req, next, {
-      clientPath: 'password',
-    });
+    await emailResetToken(req, { clientPath: 'password' });
 
     delete req.user?.password;
     res.json(req.user);
