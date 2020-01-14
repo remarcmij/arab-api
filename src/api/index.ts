@@ -4,6 +4,7 @@ import '../auth/local/passport-setup';
 import { isAdmin, isAuthenticated, maybeAuthenticated } from '../auth/services';
 import {
   deleteTopic,
+  deleteUser,
   getAll,
   getAllUsers,
   getArticle,
@@ -13,7 +14,7 @@ import {
   getRoot,
   getSearch,
   postUpload,
-  postUserAuthorize,
+  patchUserAuthorize,
 } from './endpoints';
 
 const apiRouter = express.Router();
@@ -86,10 +87,17 @@ apiRouter.get('/lookup', getLookup.handlers);
  * parameters:
  *   - (body) {email: string; authorize: boolean} as an `id` to update.
  */
-apiRouter.patch('/user/authorize', isAdmin, postUserAuthorize.handlers);
+apiRouter.patch('/user/authorize', isAdmin, patchUserAuthorize.handlers);
+
+/* @oas [delete] /user
+ * description: if (admin) allow admins to remove user specified with his email address.
+ * parameters:
+ *   - (body) {email: string} as an `id` to remove.
+ */
+apiRouter.delete('/user', isAdmin, deleteUser.handlers);
 
 /* @oas [get] /users/all
- * description: if (admin) allow admins to list all users or match dates flexibility along with regex.
+ * description: if (admin) allow admins to list all users.
  */
 apiRouter.get('/users/all', isAdmin, getAllUsers);
 
