@@ -1,4 +1,7 @@
-require('dotenv').config();
+/* eslint-disable @typescript-eslint/no-var-requires */
+const myEnv = require('dotenv').config();
+require('dotenv-expand')(myEnv);
+
 import compression from 'compression';
 import cors from 'cors';
 import exitHook from 'exit-hook';
