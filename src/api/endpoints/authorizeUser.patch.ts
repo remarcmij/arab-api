@@ -5,7 +5,7 @@ import i18next from 'i18next';
 import { handleRequestErrors } from '../../middleware/route-validator';
 import User from '../../models/User';
 
-export const patchUserAuthorize = async (
+export const authorizeUserPatch = async (
   req: Request,
   res: Response,
   next: NextFunction,
@@ -32,7 +32,7 @@ export const patchUserAuthorize = async (
   }
 };
 
-patchUserAuthorize.handlers = [
+authorizeUserPatch.handlers = [
   body('email', i18next.t('email_required'))
     .not()
     .isEmpty(),
@@ -41,5 +41,5 @@ patchUserAuthorize.handlers = [
     .not()
     .isEmpty(),
   handleRequestErrors,
-  patchUserAuthorize,
+  authorizeUserPatch,
 ];

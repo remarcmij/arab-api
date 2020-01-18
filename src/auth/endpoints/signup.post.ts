@@ -9,7 +9,7 @@ import { handleRequestErrors } from '../../middleware/route-validator';
 
 const PASSWORD_MIN_LENGTH = 8;
 
-export const postAuthSignup = async (
+export const signupPost = async (
   req: Request,
   res: Response,
   next: NextFunction,
@@ -47,7 +47,7 @@ export const postAuthSignup = async (
   }
 };
 
-postAuthSignup.handlers = [
+signupPost.handlers = [
   body('name', i18next.t('user_name_required'))
     .not()
     .isEmpty(),
@@ -61,5 +61,5 @@ postAuthSignup.handlers = [
     min: PASSWORD_MIN_LENGTH,
   }),
   handleRequestErrors,
-  postAuthSignup,
+  signupPost,
 ];

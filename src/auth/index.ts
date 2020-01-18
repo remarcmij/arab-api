@@ -1,16 +1,15 @@
 import express, { Request, Response } from 'express';
 import {
-  getAuthGoogle,
-  getAuthGoogleCallback,
-  getAuthResetPassRequest,
-  getAuthRoot,
-  getAuthToken,
-  patchAuthChangePassword,
-  patchAuthResetPassword,
-  postAuthConfirmation,
-  postAuthLogin,
-  postAuthPassword,
-  postAuthSignup,
+  googleGet,
+  googleCallbackGet,
+  rootGet,
+  tokenGet,
+  changePasswordPatch,
+  resetPasswordPatch,
+  confirmationPost,
+  loginPost,
+  passwordPost,
+  signupPost,
 } from './endpoints';
 import googlePassportSetup from './google/passport-setup';
 import { isAuthenticated, sendAuthToken, setTokenCookie } from './services';
@@ -20,35 +19,29 @@ const router = express.Router();
 router.use(googlePassportSetup);
 
 router
-  .get('/google/callback', getAuthGoogleCallback, setTokenCookie)
-  .get('/google', getAuthGoogle);
+  .get('/google/callback', googleCallbackGet, setTokenCookie)
+  .get('/google', googleGet);
 
-router.post('/login', postAuthLogin.handlers, sendAuthToken);
+router.post('/login', loginPost.handlers, sendAuthToken);
 
-router.post('/signup', postAuthSignup.handlers, sendAuthToken);
+router.post('/signup', signupPost.handlers, sendAuthToken);
 
-router.post('/confirmation', postAuthConfirmation);
-
-// Do we need this?
-//  - we have a password change
-//  - we have a password reset
-// ? else
-router.get('/password', isAuthenticated, getAuthResetPassRequest);
+router.post('/confirmation', confirmationPost);
 
 router.patch(
   '/password/change',
   isAuthenticated,
-  patchAuthChangePassword.handlers,
+  changePasswordPatch.handlers,
   sendAuthToken,
 );
 
-router.patch('/password/reset', patchAuthResetPassword.handlers, sendAuthToken);
+router.patch('/password/reset', resetPasswordPatch.handlers, sendAuthToken);
 
-router.post('/password', postAuthPassword.handlers);
+router.post('/password', passwordPost.handlers);
 
-router.get('/token/:tokenString', isAuthenticated, getAuthToken);
+router.get('/token/:tokenString', isAuthenticated, tokenGet);
 
-router.get('/', isAuthenticated, getAuthRoot);
+router.get('/', isAuthenticated, rootGet);
 
 router.use('*', (req: Request, res: Response) => res.sendStatus(404));
 

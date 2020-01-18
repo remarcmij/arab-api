@@ -7,7 +7,7 @@ import {
 } from '../content';
 import { debouncedRebuildAutoCompletions } from '../db';
 
-export const postUpload: RequestHandler = async (req, res, next) => {
+export const uploadPost: RequestHandler = async (req, res, next) => {
   const data = req.file.buffer.toString('utf8');
   const nextWithError = withError(next);
   try {

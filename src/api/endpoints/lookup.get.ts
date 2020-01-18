@@ -6,7 +6,7 @@ import {
 import { withError } from '../ApiError';
 import * as db from '../db';
 
-export const getLookup = async (
+export const lookupGet = async (
   req: Request,
   res: Response,
   next: NextFunction,
@@ -20,8 +20,8 @@ export const getLookup = async (
   }
 };
 
-getLookup.handlers = [
+lookupGet.handlers = [
   checkRequiredFields('term', 'term is required'),
   handleRequestErrors,
-  getLookup,
+  lookupGet,
 ];

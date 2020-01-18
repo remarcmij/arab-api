@@ -6,7 +6,7 @@ import { handleRequestErrors } from '../../middleware/route-validator';
 import User from '../../models/User';
 import { withError } from '../ApiError';
 
-export const deleteUser = async (
+export const userDelete = async (
   req: Request,
   res: Response,
   next: NextFunction,
@@ -30,10 +30,10 @@ export const deleteUser = async (
   }
 };
 
-deleteUser.handlers = [
+userDelete.handlers = [
   body('email', i18next.t('email_required'))
     .not()
     .isEmpty(),
   handleRequestErrors,
-  deleteUser,
+  userDelete,
 ];

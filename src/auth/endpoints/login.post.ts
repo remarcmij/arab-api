@@ -5,7 +5,7 @@ import passport from 'passport';
 import { withError } from '../../api/ApiError';
 import { handleRequestErrors } from '../../middleware/route-validator';
 
-export const postAuthLogin = (
+export const loginPost = (
   req: Request,
   res: Response,
   next: NextFunction,
@@ -26,11 +26,11 @@ export const postAuthLogin = (
   })(req, res, next);
 };
 
-postAuthLogin.handlers = [
+loginPost.handlers = [
   body('email', i18next.t('email_required')).isEmail(),
   body('password', i18next.t('password_required'))
     .not()
     .isEmpty(),
   handleRequestErrors,
-  postAuthLogin,
+  loginPost,
 ];

@@ -7,7 +7,7 @@ import { isAuthorized } from '../../models/User';
 import { withError } from '../ApiError';
 import * as db from '../db';
 
-export const getSearch = async (
+export const searchGet = async (
   req: Request,
   res: Response,
   next: NextFunction,
@@ -21,8 +21,8 @@ export const getSearch = async (
   }
 };
 
-getSearch.handlers = [
+searchGet.handlers = [
   checkRequiredFields('term', 'term is required'),
   handleRequestErrors,
-  getSearch,
+  searchGet,
 ];

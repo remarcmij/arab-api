@@ -2,7 +2,7 @@ import { RequestHandler } from 'express';
 import User from '../../models/User';
 import logger from '../../config/logger';
 
-export const getAuthRoot: RequestHandler = async (req, res) => {
+export const rootGet: RequestHandler = async (req, res) => {
   try {
     if (!req.user) {
       return res.sendStatus(401);

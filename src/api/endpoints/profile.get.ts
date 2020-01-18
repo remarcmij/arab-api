@@ -3,7 +3,7 @@ import { withError } from '../ApiError';
 import User from '../../models/User';
 import logger from '../../config/logger';
 
-export const getProfile: RequestHandler = async (req, res, next) => {
+export const profileGet: RequestHandler = async (req, res, next) => {
   const nextWithError = withError(next);
   try {
     const user = await User.findOne({ email: req.user!.email }).select(

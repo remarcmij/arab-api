@@ -3,7 +3,7 @@ import { isAuthorized } from '../../models/User';
 import { RequestHandler } from 'express';
 import { withError } from '../ApiError';
 
-export const getRoot: RequestHandler = async (req, res, next) => {
+export const rootGet: RequestHandler = async (req, res, next) => {
   try {
     const topics = await db.getIndexTopics();
     const userRelatedTopics = topics.filter(
@@ -15,7 +15,7 @@ export const getRoot: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const getAll: RequestHandler = async (req, res, next) => {
+export const allGet: RequestHandler = async (req, res, next) => {
   try {
     const topics = await db.getAllTopics();
     res.json(topics);
