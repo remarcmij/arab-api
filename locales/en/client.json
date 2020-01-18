@@ -66,5 +66,6 @@
   "non_authorized_users": "Non-authorized users",
   "non_verified_users": "Non-verified users",
   "long_time_no_access_users": "Long time no seen users",
-  "no_match_for": "No match for"
+  "no_match_for": "No match for",
+  "secure_account": "Secure your account"
 }
