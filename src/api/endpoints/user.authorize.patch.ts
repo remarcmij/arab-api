@@ -22,6 +22,7 @@ export const patchUserAuthorize = async (
     }
 
     user.authorized = req.body.authorize;
+    user.verified = true;
     await user.save();
 
     delete user.password;
