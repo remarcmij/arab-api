@@ -66,5 +66,6 @@
   "limit_field_key": "Field name too long.",
   "limit_field_value": "Field value too long.",
   "limit_field_count": "Too many fields.",
-  "limit_unexpected_file": "Unexpected field."
+  "limit_unexpected_file": "Unexpected field.",
+  "user_already_secured": "User has already a secured account"
 }
