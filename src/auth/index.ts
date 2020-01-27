@@ -11,6 +11,7 @@ import {
   postAuthLogin,
   postAuthPassword,
   postAuthSignup,
+  setPasswordPatch,
 } from './endpoints';
 import googlePassportSetup from './google/passport-setup';
 import { isAuthenticated, sendAuthToken, setTokenCookie } from './services';
@@ -39,6 +40,13 @@ router.patch(
   '/password/change',
   isAuthenticated,
   patchAuthChangePassword.handlers,
+  sendAuthToken,
+);
+
+router.patch(
+  '/password/set',
+  isAuthenticated,
+  setPasswordPatch.handlers,
   sendAuthToken,
 );
 

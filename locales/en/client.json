@@ -53,5 +53,21 @@
   "target_language": "Target Language",
   "ar": "Arabic",
   "id": "Indonesian",
-  "nl": "Dutch"
+  "nl": "Dutch",
+  "expired_token_non_login": "expired link! please login and try again.",
+  "expired_token_login": "expired link!",
+  "request_new_token": "verify your email by requesting new verification link.",
+  "check_email": "please check your email inbox, social, promotion or spam if not found.",
+  "note_token_is_resent": "making sure you're up and running with the verification process, you can click this button after two minutes for new request.",
+  "note_verification_process_duration": "Email verification may take up to 2 minutes utmost",
+  "request_new_link": "request new link",
+  "go_to_content": "go to unrestricted content",
+  "last_access": "Last Access",
+  "user_options": "User options",
+  "authorized_users": "Authorized users",
+  "non_authorized_users": "Non-authorized users",
+  "non_verified_users": "Non-verified users",
+  "long_time_no_access_users": "Long time no seen users",
+  "no_match_for": "No match for",
+  "secure_account": "Secure your account"
 }
