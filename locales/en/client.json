@@ -30,7 +30,7 @@
   "search_placeholder": "Search...",
   "search_tooltip": "Search",
   "show_transcription": "Show transcription",
-  "show_arabic_vocalization": "Show Arabic vocalization",
+  "show_vocalization": "Show vocalization",
   "transcription_system": "Transcription",
   "unknown_error": "An unknown error occurred.",
   "upload_content": "Upload content",
@@ -50,6 +50,7 @@
   "settings_side_menu_header": "Settings",
   "voice_preferences": "Voice preferences",
   "voice_preferences_order": "Reorder voices in order of preference",
+  "target_language": "Target Language",
   "ar": "Arabic",
   "id": "Indonesian",
   "nl": "Dutch"
