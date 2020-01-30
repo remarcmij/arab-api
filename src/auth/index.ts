@@ -10,6 +10,7 @@ import {
   loginPost,
   passwordPost,
   signupPost,
+  setPasswordPatch,
 } from './endpoints';
 import googlePassportSetup from './google/passport-setup';
 import { isAuthenticated, sendAuthToken, setTokenCookie } from './services';
@@ -36,6 +37,13 @@ router.patch(
 );
 
 router.patch('/password/reset', resetPasswordPatch.handlers, sendAuthToken);
+
+router.patch(
+  '/password/set',
+  isAuthenticated,
+  setPasswordPatch.handlers,
+  sendAuthToken,
+);
 
 router.post('/password', passwordPost.handlers);
 

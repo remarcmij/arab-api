@@ -63,7 +63,5 @@
   "last_access": "Last Access",
   "manage_users": "Manage users",
   "authorized_users": "Authorized users",
-  "non_authorized_users": "Unauthorized users",
-  "non_verified_users": "Unverified users",
-  "no_match_for": "No match for"
+  "secure_account": "Secure your account"
 }

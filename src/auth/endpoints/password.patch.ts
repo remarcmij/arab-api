@@ -9,7 +9,7 @@ import User, {
   IUser,
   validatePassword,
 } from '../../models/User';
-import { assertIsString, AppError } from '../../util';
+import { AppError, assertIsString } from '../../util';
 import { emailForUserAuthorization } from './helpers';
 
 const PASSWORD_MIN_LENGTH = 8;
@@ -118,4 +118,50 @@ resetPasswordPatch.handlers = [
   ).isLength({ min: PASSWORD_MIN_LENGTH }),
   handleRequestErrors,
   resetPasswordPatch,
+];
+
+export const setPasswordPatch = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const nextWithError = withError(next);
+  try {
+    const user = await User.findOne({ email: req.user!.email });
+    if (!user) {
+      return nextWithError({
+        status: 401,
+        i18nKey: 'unknown_user',
+      });
+    }
+
+    if (user.password) {
+      return nextWithError({
+        status: 400,
+        i18nKey: 'user_already_secured',
+        logMsg: `(${user!.email}) attempt to set password in secured account.`,
+      });
+    }
+
+    const { password } = req.body;
+
+    user.password = await encryptPassword(password);
+    await user.save();
+
+    next();
+  } catch {
+    nextWithError({
+      status: 500,
+      i18nKey: 'server_error',
+    });
+  }
+};
+
+setPasswordPatch.handlers = [
+  body(
+    'password',
+    i18n.t('password_min_length', { minLength: PASSWORD_MIN_LENGTH }),
+  ).isLength({ min: PASSWORD_MIN_LENGTH }),
+  handleRequestErrors,
+  setPasswordPatch,
 ];
