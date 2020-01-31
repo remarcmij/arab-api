@@ -3,7 +3,7 @@ import { withError } from '../../api/ApiError';
 import { decodeToken } from '../services';
 import { emailConfirmationToken } from './helpers';
 
-export const getAuthToken: RequestHandler = async (req, res, next) => {
+export const tokenGet: RequestHandler = async (req, res, next) => {
   const nextWithError = withError(next);
   try {
     if (req.user?.verified) {

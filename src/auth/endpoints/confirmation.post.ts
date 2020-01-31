@@ -5,7 +5,7 @@ import User from '../../models/User';
 import { assertIsString } from '../../util';
 import { emailForUserAuthorization } from './helpers';
 
-export const postAuthConfirmation: RequestHandler = async (req, res, next) => {
+export const confirmationPost: RequestHandler = async (req, res, next) => {
   const { token } = req.body;
   const nextWithError = withError(next);
 
@@ -37,7 +37,7 @@ export const postAuthConfirmation: RequestHandler = async (req, res, next) => {
     await user.save();
 
     emailForUserAuthorization(req, {
-      clientPath: `/admin/users/options`,
+      clientPath: `/admin/users`,
       name: user.name,
     });
 

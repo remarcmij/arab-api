@@ -7,7 +7,7 @@ import { isAuthorized } from '../../models/User';
 import { withError } from '../ApiError';
 import * as db from '../db';
 
-export const getIndex = async (
+export const indexGet = async (
   req: Request,
   res: Response,
   next: NextFunction,
@@ -23,8 +23,8 @@ export const getIndex = async (
   }
 };
 
-getIndex.handlers = [
+indexGet.handlers = [
   checkRequiredFields('publication', 'publication is required'),
   handleRequestErrors,
-  getIndex,
+  indexGet,
 ];

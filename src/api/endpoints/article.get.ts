@@ -7,7 +7,7 @@ import { isAuthorized } from '../../models/User';
 import { withError } from '../ApiError';
 import * as db from '../db';
 
-export const getArticle = async (
+export const articleGet = async (
   req: Request,
   res: Response,
   next: NextFunction,
@@ -37,8 +37,8 @@ export const getArticle = async (
   }
 };
 
-getArticle.handlers = [
+articleGet.handlers = [
   checkRequiredFields('filename', 'filename is required'),
   handleRequestErrors,
-  getArticle,
+  articleGet,
 ];

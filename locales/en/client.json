@@ -63,11 +63,10 @@
   "request_new_link": "request new link",
   "go_to_content": "go to unrestricted content",
   "last_access": "Last Access",
-  "user_options": "User options",
+  "manage_users": "Manage users",
   "authorized_users": "Authorized users",
-  "non_authorized_users": "Non-authorized users",
-  "non_verified_users": "Non-verified users",
-  "long_time_no_access_users": "Long time no seen users",
-  "no_match_for": "No match for",
-  "secure_account": "Secure your account"
+  "secure_account": "Secure your account",
+  "unauthorized_users": "Unauthorized users",
+  "unverified_users": "Unverified users",
+  "no_match_for": "No match for"
 }

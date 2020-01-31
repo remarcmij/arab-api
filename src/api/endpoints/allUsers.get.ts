@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import User from '../../models/User';
 import { withError } from '../ApiError';
 
-export const getAllUsers = async (
+export const allUsersGet = async (
   req: Request,
   res: Response,
   next: NextFunction,

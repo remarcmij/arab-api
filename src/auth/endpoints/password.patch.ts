@@ -14,7 +14,7 @@ import { emailForUserAuthorization } from './helpers';
 
 const PASSWORD_MIN_LENGTH = 8;
 
-export const patchAuthChangePassword = async (
+export const changePasswordPatch = async (
   req: Request,
   res: Response,
   next: NextFunction,
@@ -60,7 +60,7 @@ export const patchAuthChangePassword = async (
   }
 };
 
-patchAuthChangePassword.handlers = [
+changePasswordPatch.handlers = [
   body(
     'password',
     i18n.t('password_min_length', { minLength: PASSWORD_MIN_LENGTH }),
@@ -69,10 +69,10 @@ patchAuthChangePassword.handlers = [
     .not()
     .isEmpty(),
   handleRequestErrors,
-  patchAuthChangePassword,
+  changePasswordPatch,
 ];
 
-export const patchAuthResetPassword = async (
+export const resetPasswordPatch = async (
   req: Request,
   res: Response,
   next: NextFunction,
@@ -93,7 +93,7 @@ export const patchAuthResetPassword = async (
     await user!.save();
 
     emailForUserAuthorization(req, {
-      clientPath: `/admin/users/options`,
+      clientPath: `/admin/users`,
       name: user!.name,
     });
 
@@ -108,7 +108,7 @@ export const patchAuthResetPassword = async (
   }
 };
 
-patchAuthResetPassword.handlers = [
+resetPasswordPatch.handlers = [
   body('resetToken', i18n.t('reset_token_required'))
     .not()
     .isEmpty(),
@@ -117,7 +117,7 @@ patchAuthResetPassword.handlers = [
     i18n.t('password_min_length', { minLength: PASSWORD_MIN_LENGTH }),
   ).isLength({ min: PASSWORD_MIN_LENGTH }),
   handleRequestErrors,
-  patchAuthResetPassword,
+  resetPasswordPatch,
 ];
 
 export const setPasswordPatch = async (

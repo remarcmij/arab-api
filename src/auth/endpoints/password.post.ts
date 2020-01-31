@@ -6,7 +6,7 @@ import { handleRequestErrors } from '../../middleware/route-validator';
 import User from '../../models/User';
 import { emailResetToken } from './helpers';
 
-export const postAuthPassword = async (
+export const passwordPost = async (
   req: Request,
   res: Response,
   next: NextFunction,
@@ -40,8 +40,8 @@ export const postAuthPassword = async (
   }
 };
 
-postAuthPassword.handlers = [
+passwordPost.handlers = [
   body('email', i18next.t('email_required')).isEmail(),
   handleRequestErrors,
-  postAuthPassword,
+  passwordPost,
 ];

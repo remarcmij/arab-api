@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import passport from 'passport';
 
-export const getAuthGoogle = passport.authenticate(
+export const googleGet = passport.authenticate(
   'google',
   {
     scope: ['openid', 'profile', 'email'],
@@ -12,6 +12,6 @@ export const getAuthGoogle = passport.authenticate(
   },
 );
 
-export const getAuthGoogleCallback = passport.authenticate('google', {
+export const googleCallbackGet = passport.authenticate('google', {
   session: false,
 });
