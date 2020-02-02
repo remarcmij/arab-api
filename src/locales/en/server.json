@@ -1,0 +1,71 @@
+{
+  "verification_email": {
+    "subject": "Account verification",
+    "body": {
+      "title": "Email Confirmation",
+      "greeting": "Hi {{name}}",
+      "opening": "Thanks for your registration!",
+      "prompt": "Please verify your account by clicking:",
+      "buttonText": "Here",
+      "closing": "Kind Regards,<br>Team Study Aid Arabic"
+    }
+  },
+  "password_reset_email": {
+    "subject": "Password reset",
+    "body": {
+      "title": "password reset request",
+      "greeting": "Hi {{name}}",
+      "opening": "You have requested a password reset",
+      "prompt": "Please verify your request by clicking:",
+      "buttonText": "Here",
+      "closing": "Kind Regards,<br>Team Study Aid Arabic"
+    }
+  },
+  "user_verified_email": {
+    "subject": "New User Verified",
+    "body": {
+      "title": "A new user has been verified",
+      "greeting": "Hello there",
+      "opening": "The user {{name}} has registered and verified his e-mail account",
+      "prompt": "Please authorize his access by clicking:",
+      "buttonText": "Here",
+      "closing": "Kind Regards,<br>Team Study Aid Arabic"
+    }
+  },
+  "missing_required_field": "Missing required field",
+  "account_verified": "Your account has been verified.",
+  "already_verified": "This user has already been verified.",
+  "already_authorized": "This user has already been authorized.",
+  "email_already_registered": "This email address is already registered.",
+  "email_required": "An email address is required",
+  "invalid_credentials": "Email address or password is invalid.",
+  "password_min_length": "A password should have at least {{minLength}} characters.",
+  "password_required": "A password is required.",
+  "password_invalid": "The password is invalid.",
+  "passwords_mismatch": "The passwords do not match.",
+  "passwords_cant_match": "The new password should not match the old.",
+  "current_password_required": "The current password is required.",
+  "unknown_user": "User doesn't exist",
+  "server_error": "Server error",
+  "something_went_wrong": "Something went wrong.",
+  "token_expired": "The verification link has expired.",
+  "invalid_token": "Invalid token",
+  "reset_token_required": "Reset token is required",
+  "empty_login_token": "No token, authorization denied",
+  "too_early": "Request is too early",
+  "unauthorized": "Unauthorized",
+  "forbidden": "Forbidden",
+  "unexpected_error": "The server encountered an unexpected error.",
+  "user_name_required": "A user name is required",
+  "user_not_found": "We were unable to find a matching user for this request.",
+  "invalid_upload_filename": "can't upload none markdown or another filename structure than '<publication>.<chapter>.md",
+  "topic_not_found": "Topic not found.",
+  "limit_part_count": "Too many parts.",
+  "limit_file_size": "File too large.",
+  "limit_file_count": "Too many files.",
+  "limit_field_key": "Field name too long.",
+  "limit_field_value": "Field value too long.",
+  "limit_field_count": "Too many fields.",
+  "limit_unexpected_file": "Unexpected field.",
+  "user_already_secured": "User has already a secured account"
+}

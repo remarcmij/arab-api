@@ -1,5 +1,7 @@
-// tslint:disable-next-line: no-var-requires
-require('dotenv').load();
+/* eslint-disable @typescript-eslint/no-var-requires */
+const myEnv = require('dotenv').config();
+require('dotenv-expand')(myEnv);
+
 import compression from 'compression';
 import cors from 'cors';
 import exitHook from 'exit-hook';
@@ -11,10 +13,10 @@ import morgan from 'morgan';
 import passport from 'passport';
 import path from 'path';
 import apiRouter from './api';
-import * as content from './api/content';
 import authRouter from './auth';
 import connectDB from './config/db';
 import logger from './config/logger';
+import { sysErrorsHandler, userErrorsHandler } from './error-establisher';
 import localesRouter from './locales';
 
 const PORT = 8080; // default port to listen
@@ -43,8 +45,8 @@ i18next
   .use(i18middleware.LanguageDetector)
   .init({
     backend: {
-      loadPath: path.join(__dirname, '/../locales/{{lng}}/{{ns}}.json'),
-      addPath: path.join(__dirname, '/../locales/{{lng}}/{{ns}}.missing.json'),
+      loadPath: path.join(__dirname, './locales/{{lng}}/{{ns}}.json'),
+      addPath: path.join(__dirname, './locales/{{lng}}/{{ns}}.missing.json'),
     },
     fallbackLng: 'en',
     ns: ['server'],
@@ -74,15 +76,11 @@ i18next
       .get((req, res) => res.sendFile('index.html', { root: docRoot }));
   }
 
+  app.use(sysErrorsHandler, userErrorsHandler);
+
   app.listen(PORT, async () => {
     logger.info('---------------------------------------');
-    try {
-      await content.syncContent();
-      content.watchContent();
-      logger.info(`server started at http://localhost:${PORT}`);
-    } catch (err) {
-      logger.error(`error starting server: ${err.message}`);
-    }
+    logger.info(`server started at http://localhost:${PORT}`);
   });
 
   exitHook(() => {

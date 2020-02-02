@@ -38,6 +38,7 @@ Example: `avbpel.index.md`
 title: Arabisch voor beginners 1
 subtitle: Een werkboek voor de studie van het Modern Standaardarabisch.
 restricted: false
+index: true
 ---
 ```
 

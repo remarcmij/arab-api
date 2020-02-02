@@ -1,146 +1,107 @@
 import express, { Request, Response } from 'express';
-import { check, validationResult } from 'express-validator/check';
-import i18next from 'i18next';
-import { isAuthenticated, maybeAuthenticated } from '../auth/auth-service';
+import multer from 'multer';
 import '../auth/local/passport-setup';
-import logger from '../config/logger';
-import { ITopic } from '../models/Topic';
-import User, { isAuthorized } from '../models/User';
-import * as db from './db';
+import { isAdmin, isAuthenticated, maybeAuthenticated } from '../auth/services';
+import {
+  topicDelete,
+  userDelete,
+  allGet,
+  allUsersGet,
+  articleGet,
+  indexGet,
+  lookupGet,
+  profileGet,
+  rootGet,
+  searchGet,
+  uploadPost,
+  authorizeUserPatch,
+} from './endpoints';
 
 const apiRouter = express.Router();
-
-const handleRequestErrors = (req: Request, res: Response): boolean => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    res.status(400).json(errors.array());
-    return true;
-  }
-  return false;
-};
+const uploadSingleFile = multer().single('file');
 
 /*
  * @oas [get] /api
  * description: Returns a list of publications topics
  */
-apiRouter.get('/', maybeAuthenticated, (req: Request, res: Response) => {
-  db.getIndexTopics()
-    .then(topics =>
-      topics.filter(topic => !topic.restricted || isAuthorized(req.user)),
-    )
-    .then(topics => res.json(topics));
-});
+apiRouter.get('/', maybeAuthenticated, rootGet);
 
-apiRouter.get(
-  '/profile',
-  isAuthenticated,
-  async (req: Request, res: Response) => {
-    try {
-      const user = await User.findOne({ email: req.user!.email }).select(
-        '-hashedPassword',
-      );
-      if (!user) {
-        return res.sendStatus(401);
-      }
-      user.lastAccess = new Date();
-      await user.save();
-      logger.info(`user ${user.email} signed in`);
-      res.json(user);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  },
-);
+/*
+ * @oas [get] /all
+ * description: if (admin) Returns a list of all topics.
+ */
+apiRouter.get('/all', isAdmin, allGet);
+
+/*
+ * @oas [post] /upload
+ * description: if (admin) allows admins to upload new content as files, Returns a status object: { disposition: 'success' | 'unchanged' }
+ * parameters:
+ *   - (body) file {FormData} client object.
+ */
+apiRouter.post('/upload', isAdmin, uploadSingleFile, uploadPost);
+
+/*
+ * @oas [delete] /topic/{filename}
+ * description: if (admin) allows admins to delete certain content, Returns Returns a list of all topics.
+ * parameters:
+ *   - (path) filename {string} as the content ID.
+ */
+apiRouter.delete('/topic/:filename', isAdmin, topicDelete, allGet);
+
+/*
+ * @oas [get] /profile
+ * description: if (user) allows a user to preview their own profile details.
+ */
+apiRouter.get('/profile', isAuthenticated, profileGet);
 
 /* @oas [get] /api/index/{publication}
  * description: Returns a list of article topics
  * parameters:
  *   - (path) publication {string} The publication name
  */
-apiRouter.get(
-  '/index/:publication',
-  maybeAuthenticated,
-  check('publication', 'publication is required')
-    .not()
-    .isEmpty(),
-  (req: Request, res: Response) => {
-    if (handleRequestErrors(req, res)) {
-      return;
-    }
-    db.getArticleTopics(req.params.publication)
-      .then(topics =>
-        topics.filter(topic => !topic.restricted || isAuthorized(req.user)),
-      )
-      .then(topics => res.json(topics));
-  },
-);
+apiRouter.get('/index/:publication', maybeAuthenticated, indexGet.handlers);
 
 /* @oas [get] /api/article/{filename}
  * description: Returns an article topic
  * parameters:
  *   - (path) filename {string} The article filename
  */
-apiRouter.get(
-  '/article/:filename',
-  maybeAuthenticated,
-  check('filename', 'filename is required')
-    .not()
-    .isEmpty(),
-  (req: Request, res: Response) => {
-    if (handleRequestErrors(req, res)) {
-      return;
-    }
-    const { filename } = req.params;
-    db.getArticle(filename).then((topic: ITopic): void => {
-      if (!topic) {
-        return void res
-          .status(404)
-          .json({ message: i18next.t('unexpected_error') });
-      }
-      if (topic.restricted && !isAuthorized(req.user)) {
-        logger.warn(`Attempt to access protected content`);
-        return void res
-          .status(401)
-          .json({ message: i18next.t('unauthorized') });
-      }
-      res.json(topic);
-    });
-  },
-);
+apiRouter.get('/article/:filename', maybeAuthenticated, articleGet.handlers);
 
-apiRouter.get(
-  '/search',
-  maybeAuthenticated,
-  check('term', 'term is required')
-    .not()
-    .isEmpty(),
-  (req: Request, res: Response): void => {
-    if (handleRequestErrors(req, res)) {
-      return;
-    }
-    const { term } = req.query;
-    db.searchWord(term, isAuthorized(req.user))
-      .then((lemmas: unknown[]) => res.json(lemmas))
-      .catch(err => res.status(500).json({ error: err.message }));
-  },
-);
+/* @oas [get] /search
+ * description: Returns a search result out of a `term` the user required, appropriate for the user's restriction.
+ * parameters:
+ *   - (body) term {string} to look up into the database.
+ */
+apiRouter.get('/search', maybeAuthenticated, searchGet.handlers);
 
-apiRouter.get(
-  '/lookup',
-  check('term', 'term is required')
-    .not()
-    .isEmpty(),
-  (req: Request, res: Response) => {
-    if (handleRequestErrors(req, res)) {
-      return;
-    }
-    const { term } = req.query;
-    db.lookup(term)
-      .then((words: unknown[]) => res.json({ words, term }))
-      .catch(err => res.status(500).json({ error: err.message }));
-  },
-);
+/* @oas [get] /lookup
+ * description: Returns a list of suggestion words to look into.
+ * parameters:
+ *   - (body) term {string} to look up into the database.
+ */
+apiRouter.get('/lookup', lookupGet.handlers);
 
+/* @oas [patch] /user/authorize
+ * description: if (admin) allows admins to authorize users for restricted content, Returns the requested user Object.
+ * parameters:
+ *   - (body) {email: string; authorize: boolean} as an `id` to update.
+ */
+apiRouter.patch('/user/authorize', isAdmin, authorizeUserPatch.handlers);
+
+/* @oas [delete] /user
+ * description: if (admin) allow admins to remove user specified with his email address.
+ * parameters:
+ *   - (body) {email: string} as an `id` to remove.
+ */
+apiRouter.delete('/user', isAdmin, userDelete.handlers);
+
+/* @oas [get] /users/all
+ * description: if (admin) allow admins to list all users.
+ */
+apiRouter.get('/users/all', isAdmin, allUsersGet);
+
+// Error Handling!
 apiRouter.use('*', (req: Request, res: Response) => res.sendStatus(404));
 
 export default apiRouter;

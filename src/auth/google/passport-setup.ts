@@ -1,11 +1,13 @@
 /// <reference types="../../typings/passport-google-oauth20" />
 
+import { NextFunction, Request, Response } from 'express';
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import { withError } from '../../api/ApiError';
 import logger from '../../config/logger';
 import User, { IUser, IUserDocument } from '../../models/User';
 import { assertIsString } from '../../util';
-import { sendMail } from '../auth-service';
+import { emailForUserAuthorization } from '../endpoints/helpers';
 
 interface IGoogleProfile {
   id: string;
@@ -18,57 +20,71 @@ interface IGoogleProfile {
 
 // ref: https://medium.com/front-end-weekly/learn-using-jwt-with-passport-authentication-9761539c4314
 
-async function verify(
-  _accessToken: string,
-  _refreshToken: string,
-  profile: IGoogleProfile,
-  cb: (err: Error | null, user?: IUserDocument) => void,
-) {
-  try {
-    const {
-      displayName,
-      emails: {
-        0: { value: email },
-      },
-    } = profile;
-    const photo = profile.photos?.[0].value ?? '';
-    let user = await User.findOne({ email });
-    if (!user) {
-      const userInfo: IUser = {
-        email,
-        name: displayName,
-        photo,
-        verified: true,
-      };
-      user = await new User(userInfo).save();
-      logger.info(`new Google user signed in: ${user.email}`);
-      await sendMail(user);
-    } else {
+function verify(req: Request) {
+  return async (
+    _accessToken: string,
+    _refreshToken: string,
+    profile: IGoogleProfile,
+    done: (err: Error | null, user?: IUserDocument) => void,
+  ) => {
+    try {
+      const {
+        displayName,
+        emails: {
+          0: { value: email },
+        },
+      } = profile;
+
+      let user = await User.findOne({ email });
+      if (!user) {
+        const userInfo: IUser = {
+          email,
+          name: displayName,
+          // If signed in with Google, the email address is verified by implication
+          verified: true,
+        };
+        user = new User(userInfo);
+        logger.info(`new Google user signed in: ${user.email}`);
+      }
+
+      if (!user.authorized) {
+        await emailForUserAuthorization(req, {
+          clientPath: `/admin/users`,
+          name: user.name,
+        });
+      }
+
       // Update user document with most recent profile data.
-      user.photo = photo;
+      user.photo = profile.photos?.[0].value ?? '';
       user.name = displayName;
-      // If signed in with Google, the email address is verified by implication
-      user.verified = true;
       await user.save();
+
       logger.debug(`existing Google user signed in: ${user.email}`);
+
+      done(null, user);
+    } catch (error) {
+      withError(done)({
+        error,
+        status: 500,
+      });
     }
-    cb(null, user);
-  } catch (err) {
-    cb(err);
-  }
+  };
 }
 
-passport.use(
-  (() => {
-    assertIsString(process.env.GOOGLE_CLIENT_ID);
-    assertIsString(process.env.GOOGLE_CLIENT_SECRET);
-    return new GoogleStrategy<IGoogleProfile, IUserDocument>(
-      {
-        callbackURL: '/auth/google/callback',
-        clientID: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      },
-      verify,
-    );
-  })(),
-);
+export default (req: Request, res: Response, next: NextFunction) => {
+  passport.use(
+    (() => {
+      assertIsString(process.env.GOOGLE_CLIENT_ID);
+      assertIsString(process.env.GOOGLE_CLIENT_SECRET);
+      return new GoogleStrategy<IGoogleProfile, IUserDocument>(
+        {
+          callbackURL: '/auth/google/callback',
+          clientID: process.env.GOOGLE_CLIENT_ID,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        },
+        verify(req),
+      );
+    })(),
+  );
+  next();
+};

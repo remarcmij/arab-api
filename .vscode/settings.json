@@ -1,5 +1,6 @@
 {
   "cSpell.words": [
+    "Dropzone",
     "Romanization",
     "SENDGRID",
     "Tashkeel",
@@ -11,17 +12,23 @@
     "languagedetector",
     "maxsize",
     "noreply",
+    "onvoiceschanged",
     "openid",
+    "originalname",
     "printf",
     "shhh",
     "signin",
+    "signup",
     "stemword",
     "strikethrough",
     "subfolder",
+    "svgrepo",
     "taalmap",
     "taskqueue",
     "typesafe",
-    "wordlist"
+    "uuidv",
+    "wordlist",
+    "gmail"
   ],
   "cSpell.ignorePaths": [
     "**/package-lock.json",
@@ -30,19 +37,12 @@
     "**/.git/**",
     ".vscode",
     "typings",
-    "*.md"
+    "content/*.md"
   ],
   "eslint.validate": [
     "javascript",
     "javascriptreact",
-    {
-      "language": "typescript",
-      "autoFix": true
-    },
-    {
-      "language": "typescriptreact",
-      "autoFix": true
-    }
-  ],
-  "typescript.tsdk": "node_modules\\typescript\\lib"
+    "typescript",
+    "typescriptreact"
+  ]
 }
