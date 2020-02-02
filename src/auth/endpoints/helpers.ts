@@ -9,8 +9,7 @@ import {
 import emailTemplate from '../templates/confirmation';
 
 const inDevelopmentMode = () => {
-  assertIsString(process.env.NODE_ENV);
-  return process.env.NODE_ENV === 'development';
+  return process.env?.NODE_ENV === 'development';
 };
 
 // helpers.
@@ -82,9 +81,9 @@ export const emailForUserAuthorization = async (
     return console.log(link);
   }
 
-  assertIsString(process.env.ADMIN_EMAIL);
+  assertIsString(process.env.OWNER_EMAIL);
   await sendTemplateMail({
-    email: process.env.ADMIN_EMAIL!,
+    email: process.env.OWNER_EMAIL!,
     emailTemplate,
     name: options.name,
     type: 'user_verified',
