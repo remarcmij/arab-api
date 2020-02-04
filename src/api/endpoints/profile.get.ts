@@ -7,7 +7,7 @@ export const profileGet: RequestHandler = async (req, res, next) => {
   const nextWithError = withError(next);
   try {
     const user = await User.findOne({ email: req.user!.email }).select(
-      '-hashedPassword',
+      '-password',
     );
     if (!user) {
       return void nextWithError({
