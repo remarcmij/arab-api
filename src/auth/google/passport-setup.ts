@@ -74,11 +74,12 @@ function verify(req: Request) {
 export default (req: Request, res: Response, next: NextFunction) => {
   passport.use(
     (() => {
+      assertIsString(process.env.GOOGLE_CALLBACK_URL);
       assertIsString(process.env.GOOGLE_CLIENT_ID);
       assertIsString(process.env.GOOGLE_CLIENT_SECRET);
       return new GoogleStrategy<IGoogleProfile, IUserDocument>(
         {
-          callbackURL: '/auth/google/callback',
+          callbackURL: process.env.GOOGLE_CALLBACK_URL,
           clientID: process.env.GOOGLE_CLIENT_ID,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         },
