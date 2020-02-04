@@ -33,7 +33,7 @@ const staticOptions = {
   },
 };
 
-const clientPath = '../../arab-client/build';
+const clientPath = '../arab-client/build';
 
 const docRoot = path.resolve(__dirname, clientPath);
 
