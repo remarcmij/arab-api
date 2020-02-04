@@ -16,7 +16,8 @@ export const rootGet: RequestHandler = async (req, res) => {
     logger.info(`user ${user.email} signed in`);
 
     user = { ...user.toJSON(), isSecured: !!user.password };
-    delete user?.password;
+    delete user!.password;
+    console.log(user);
 
     res.json(user);
   } catch (err) {
