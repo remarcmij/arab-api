@@ -33,10 +33,7 @@ const staticOptions = {
   },
 };
 
-const clientPath =
-  process.env.NODE_ENV === 'production'
-    ? '../public'
-    : '../../arab-client/build';
+const clientPath = '../../arab-client/build';
 
 const docRoot = path.resolve(__dirname, clientPath);
 
