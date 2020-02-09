@@ -13,8 +13,11 @@ export const searchGet = async (
   next: NextFunction,
 ) => {
   try {
-    const { term } = req.query;
-    const lemmas = await db.searchWord(term, isAuthorized(req.user));
+    const terms = req.query.term.split(' ');
+
+    const [lemmas] = await Promise.all(
+      terms.map((term: string) => db.searchWord(term, isAuthorized(req.user))),
+    );
     res.json(lemmas);
   } catch (error) {
     withError(next)({ error: error.message, status: 500 });
